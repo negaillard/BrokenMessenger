@@ -4,6 +4,7 @@ using Models.LogicContracts;
 using Models.Search;
 using Models.StorageContracts;
 using Models.View;
+using Storage.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,10 +17,10 @@ namespace Logic
 	{
 		private readonly ILogger _logger;
 		private readonly IChatStorage _chatStorage;
-		public ChatLogic(ILogger<ChatLogic> logger, IChatStorage ChatStorage)
+		public ChatLogic(ILogger<ChatLogic> logger, string username)
 		{
 			_logger = logger;
-			_chatStorage = ChatStorage;
+			_chatStorage = new ChatStorage(username);
 		}
 
 		public async Task<List<ChatViewModel>?> ReadListAsync(ChatSearchModel? model)

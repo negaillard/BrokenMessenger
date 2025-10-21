@@ -1,45 +1,89 @@
-﻿using Models.Binding;
+﻿using Interfaces;
+using Microsoft.EntityFrameworkCore;
+using Models.Binding;
 using Models.Search;
 using Models.StorageContracts;
 using Models.View;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Storage.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace Storage.Repositories
 {
 	public class ChatStorage : IChatStorage
 	{
-		public Task<ChatViewModel?> DeleteAsync(ChatBindingModel model)
+		private readonly ChatDatabase _context;
+
+		public ChatStorage(string username)
 		{
-			throw new NotImplementedException();
+			_context = new ChatDatabase(username);
 		}
 
-		public Task<ChatViewModel?> GetElementAsync(ChatSearchModel model)
+		public async Task<ChatViewModel?> DeleteAsync(ChatBindingModel model)
 		{
-			throw new NotImplementedException();
+			var element = await _context.Chats.FirstOrDefaultAsync(rec => rec.Id == model.Id);
+			if (element != null)
+			{
+				_context.Chats.Remove(element);
+				await _context.SaveChangesAsync();
+				return element.GetViewModel;
+			}
+			return null;
 		}
 
-		public Task<List<ChatViewModel>> GetFilteredListAsync(ChatSearchModel model)
+		public async Task<ChatViewModel?> GetElementAsync(ChatSearchModel model)
 		{
-			throw new NotImplementedException();
+			if (string.IsNullOrEmpty(model.CurrentUser) && !model.Id.HasValue)
+			{
+				return null;
+			}
+			var entity = await _context.Chats
+						.FirstOrDefaultAsync(x =>
+						(!string.IsNullOrEmpty(model.CurrentUser) && x.CurrentUser == model.CurrentUser) ||
+						(model.Id.HasValue && x.Id == model.Id));
+			if (entity != null)
+			{
+				return entity.GetViewModel;
+			}
+			return null;
 		}
 
-		public Task<List<ChatViewModel>> GetFullListAsync()
+		public async Task<List<ChatViewModel>> GetFilteredListAsync(ChatSearchModel model)
 		{
-			throw new NotImplementedException();
+			return await _context.Chats
+				.Where(x => !string.IsNullOrEmpty(model.CurrentUser) && x.CurrentUser == model.CurrentUser)
+				.Select(x => x.GetViewModel)
+				.ToListAsync();
 		}
 
-		public Task<ChatViewModel?> InsertAsync(ChatBindingModel model)
+		public async Task<List<ChatViewModel>> GetFullListAsync()
 		{
-			throw new NotImplementedException();
+			return await _context.Chats
+				.Select(x => x.GetViewModel)
+				.ToListAsync();
 		}
 
-		public Task<ChatViewModel?> UpdateAsync(ChatBindingModel model)
+		public async Task<ChatViewModel?> InsertAsync(ChatBindingModel model)
 		{
-			throw new NotImplementedException();
+			var newChat = Chat.Create(model);
+			if (newChat == null)
+			{
+				return null;
+			}
+			await _context.Chats.AddAsync(newChat);
+			await _context.SaveChangesAsync();
+			return newChat.GetViewModel;
+		}
+
+		public async Task<ChatViewModel?> UpdateAsync(ChatBindingModel model)
+		{
+			var chat = await _context.Chats.FirstOrDefaultAsync(x => x.Id == model.Id);
+			if (chat == null)
+			{
+				return null;
+			}
+			chat.Update(model);
+			await _context.SaveChangesAsync();
+			return chat.GetViewModel;
 		}
 	}
 }

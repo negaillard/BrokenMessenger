@@ -4,6 +4,7 @@ using Models.LogicContracts;
 using Models.Search;
 using Models.StorageContracts;
 using Models.View;
+using Storage.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,10 +17,10 @@ namespace Logic
 	{
 		private readonly ILogger _logger;
 		private readonly IMessageStorage _messageStorage;
-		public MessageLogic(ILogger<MessageLogic> logger, IMessageStorage MessageStorage)
+		public MessageLogic(ILogger<MessageLogic> logger, string username)
 		{
 			_logger = logger;
-			_messageStorage = MessageStorage;
+			_messageStorage = new MessageStorage(username);
 		}
 
 		public async Task<List<MessageViewModel>?> ReadListAsync(MessageSearchModel? model)

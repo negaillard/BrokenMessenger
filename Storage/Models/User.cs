@@ -2,6 +2,7 @@
 using Models.Binding;
 using Models.View;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Storage.Models
 {
@@ -23,7 +24,15 @@ namespace Storage.Models
 				Username = model.Username,
 			};
 		}
-		public UserViewModel GetViewModel() => new()
+		public void Update(UserBindingModel model)
+		{
+			if (model == null)
+			{
+				return;
+			}
+			Username = model.Username;
+		}
+		public UserViewModel GetViewModel => new()
 		{
 			Id = Id,
 			Username = Username,

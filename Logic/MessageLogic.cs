@@ -24,7 +24,7 @@ namespace Logic
 
 		public async Task<List<MessageViewModel>?> ReadListAsync(MessageSearchModel? model)
 		{
-			_logger.LogInformation("ReadList. Name:{Name}.Id:{Id}", model?.Messagename, model?.Id);
+			_logger.LogInformation("ReadList. Name:{Name}.Id:{Id}", model?.Sender, model?.Id);
 			var list = model == null
 				? await _messageStorage.GetFullListAsync()
 				: await _messageStorage.GetFilteredListAsync(model);
@@ -44,7 +44,7 @@ namespace Logic
 			{
 				throw new ArgumentNullException(nameof(model));
 			}
-			_logger.LogInformation("ReadElement. Name:{Name}.Id:{Id}", model.Messagename, model.Id);
+			_logger.LogInformation("ReadElement. Name:{Name}.Id:{Id}", model?.Sender, model?.Id);
 			var element = await _messageStorage.GetElementAsync(model);
 			if (element == null)
 			{
@@ -99,20 +99,19 @@ namespace Logic
 			{
 				return;
 			}
-			if (string.IsNullOrEmpty(model.Messagename))
+			if (string.IsNullOrEmpty(model.Sender))
 			{
-				throw new ArgumentNullException("Нет имени пользователя", nameof(model.Messagename));
+				throw new ArgumentNullException("Нет отправителя", nameof(model.Sender));
 			}
-			_logger.LogInformation("Message. Name:{Name}. Id: {Id}", model.Messagename, model.Id);
-			var element = await _messageStorage.GetElementAsync(new MessageSearchModel
+			if (string.IsNullOrEmpty(model.Recipient))
 			{
-				Messagename = model.Messagename,
-			});
-
-			if (element != null && element.Id != model.Id)
-			{
-				throw new InvalidOperationException("Такая кафедра на факультете уже есть");
+				throw new ArgumentNullException("Нет получателя", nameof(model.Recipient));
 			}
+			if (string.IsNullOrEmpty(model.Content))
+			{
+				throw new ArgumentNullException("Нет содержания", nameof(model.Content));
+			}
+			_logger.LogInformation("Message. Name:{Name}. Id: {Id}", model.Sender, model.Id);
 		}
 	}
 }

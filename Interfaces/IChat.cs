@@ -8,8 +8,8 @@ namespace Interfaces
 {
 	public interface IChat
 	{
-		int Id { get; set; }
-		string CurrentUser { get; set; }
-		string Interlocutor { get; set; }
+		int Id { get; }
+		string CurrentUser { get; }
+		string Interlocutor { get; }
 	}
 }

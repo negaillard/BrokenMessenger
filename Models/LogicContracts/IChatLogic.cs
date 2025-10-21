@@ -1,20 +1,15 @@
-﻿using Models.View;
+﻿using Models.Binding;
 using Models.Search;
-using Models.Binding;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Models.View;
 
 namespace Models.LogicContracts
 {
 	public interface IChatLogic
 	{
-		Task<List<ChatViewModel>?> ReadList(ChatSearchModel? model);
-		Task<ChatViewModel?> ReadElement(ChatSearchModel model);
-		Task<bool> Create(ChatBindingModel model);
-		Task<bool> Update(ChatBindingModel model);
-		Task<bool> Delete(ChatBindingModel model);
+		Task<List<ChatViewModel>?> ReadListAsync(ChatSearchModel? model);
+		Task<ChatViewModel?> ReadElementAsync(ChatSearchModel model);
+		Task<bool> CreateAsync(ChatBindingModel model);
+		Task<bool> UpdateAsync(ChatBindingModel model);
+		Task<bool> DeleteAsync(ChatBindingModel model);
 	}
 }

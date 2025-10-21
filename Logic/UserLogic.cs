@@ -111,7 +111,7 @@ namespace Logic
 
 			if (element != null && element.Id != model.Id)
 			{
-				throw new InvalidOperationException("Такая кафедра на факультете уже есть");
+				throw new InvalidOperationException("Такая пользователь уже есть");
 			}
 		}
 	}

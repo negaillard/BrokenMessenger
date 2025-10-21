@@ -24,7 +24,7 @@ namespace Logic
 
 		public async Task<List<ChatViewModel>?> ReadListAsync(ChatSearchModel? model)
 		{
-			_logger.LogInformation("ReadList. Name:{Name}.Id:{Id}", model?.Chatname, model?.Id);
+			_logger.LogInformation("ReadList. Name:{Name}.Id:{Id}", model?.CurrentUser, model?.Id);
 			var list = model == null
 				? await _chatStorage.GetFullListAsync()
 				: await _chatStorage.GetFilteredListAsync(model);
@@ -44,7 +44,7 @@ namespace Logic
 			{
 				throw new ArgumentNullException(nameof(model));
 			}
-			_logger.LogInformation("ReadElement. Name:{Name}.Id:{Id}", model.Chatname, model.Id);
+			_logger.LogInformation("ReadElement. Name:{Name}.Id:{Id}", model.CurrentUser, model.Id);
 			var element = await _chatStorage.GetElementAsync(model);
 			if (element == null)
 			{
@@ -99,19 +99,24 @@ namespace Logic
 			{
 				return;
 			}
-			if (string.IsNullOrEmpty(model.Chatname))
+			if (string.IsNullOrEmpty(model.CurrentUser))
 			{
-				throw new ArgumentNullException("Нет имени пользователя", nameof(model.Chatname));
+				throw new ArgumentNullException("Нет имени пользователя", nameof(model.CurrentUser));
 			}
-			_logger.LogInformation("Chat. Name:{Name}. Id: {Id}", model.Username, model.Id);
-			var element = await _chatStorage.GetElementAsync(new UserSearchModel
+			if (string.IsNullOrEmpty(model.Interlocutor))
 			{
-				Username = model.Username,
+				throw new ArgumentNullException("Нет имени собеседника", nameof(model.Interlocutor));
+			}
+			_logger.LogInformation("Chat. Name:{Name}. Id: {Id}", model.CurrentUser, model.Id);
+			var element = await _chatStorage.GetElementAsync(new ChatSearchModel
+			{
+				CurrentUser = model.CurrentUser,
+				Interlocutor = model.Interlocutor,
 			});
 
 			if (element != null && element.Id != model.Id)
 			{
-				throw new InvalidOperationException("Такая кафедра на факультете уже есть");
+				throw new InvalidOperationException("Такая чат уже есть");
 			}
 		}
 	}

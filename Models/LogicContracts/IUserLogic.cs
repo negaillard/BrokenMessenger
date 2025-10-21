@@ -1,11 +1,6 @@
-﻿using Models.View;
+﻿using Models.Binding;
 using Models.Search;
-using Models.Binding;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Models.View;
 
 namespace Models.LogicContracts
 {

@@ -8,12 +8,12 @@ namespace Interfaces
 {
 	public interface IMessage
 	{
-		int Id { get; set; }
-		string Sender { get; set; }
-		string Recipient { get; set; }
-		string Content { get; set; }
-		DateTime Timestamp { get; set; }
-		bool IsSent { get; set; }
-		int ChatId { get; set; }
+		int Id { get;  }
+		string Sender { get;  }
+		string Recipient { get;  }
+		string Content { get;  }
+		DateTime Timestamp { get; }
+		bool IsSent { get; }
+		int ChatId { get; }
 	}
 }

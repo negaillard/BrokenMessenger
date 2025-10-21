@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Interfaces
+﻿namespace Interfaces
 {
 	public interface IUser
 	{
-		int Id { get; set; }
-		string Username { get; set; }
+		int Id { get; }
+		string Username { get; }
 	}
 }

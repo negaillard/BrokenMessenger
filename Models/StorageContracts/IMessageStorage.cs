@@ -11,11 +11,11 @@ namespace Models.StorageContracts
 {
 	public interface IMessageStorage
 	{
-		Task<List<MessageViewModel>> GetFullList();
-		Task<List<MessageViewModel>> GetFilteredList(MessageSearchModel model);
-		Task<MessageViewModel>? GetElement(MessageSearchModel model);
-		Task<MessageViewModel>? Insert(MessageBindingModel model);
-		Task<MessageViewModel>? Update(MessageBindingModel model);
-		Task<MessageViewModel>? Delete(MessageBindingModel model);
+		Task<List<MessageViewModel>> GetFullListAsync();
+		Task<List<MessageViewModel>> GetFilteredListAsync(MessageSearchModel model);
+		Task<MessageViewModel?> GetElementAsync(MessageSearchModel model);
+		Task<MessageViewModel?> InsertAsync(MessageBindingModel model);
+		Task<MessageViewModel?> UpdateAsync(MessageBindingModel model);
+		Task<MessageViewModel?> DeleteAsync(MessageBindingModel model);
 	}
 }

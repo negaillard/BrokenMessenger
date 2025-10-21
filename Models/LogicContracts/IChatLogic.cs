@@ -11,8 +11,8 @@ namespace Models.LogicContracts
 {
 	public interface IChatLogic
 	{
-		Task<List<ChatViewModel>>? ReadList(ChatSearchModel? model);
-		Task<ChatViewModel>? ReadElement(ChatSearchModel model);
+		Task<List<ChatViewModel>?> ReadList(ChatSearchModel? model);
+		Task<ChatViewModel?> ReadElement(ChatSearchModel model);
 		Task<bool> Create(ChatBindingModel model);
 		Task<bool> Update(ChatBindingModel model);
 		Task<bool> Delete(ChatBindingModel model);

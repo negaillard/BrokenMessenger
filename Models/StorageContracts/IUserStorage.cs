@@ -11,11 +11,11 @@ namespace Models.StorageContracts
 {
 	public interface IUserStorage
 	{
-		Task<List<UserViewModel>> GetFullList();
-		Task<List<UserViewModel>> GetFilteredList(UserSearchModel model);
-		Task<UserViewModel>? GetElement(UserSearchModel model);
-		Task<UserViewModel>? Insert(UserBindingModel model);
-		Task<UserViewModel>? Update(UserBindingModel model);
-		Task<UserViewModel>? Delete(UserBindingModel model);
+		Task<List<UserViewModel>> GetFullListAsync();
+		Task<List<UserViewModel>> GetFilteredListAsync(UserSearchModel model);
+		Task<UserViewModel?> GetElementAsync(UserSearchModel model);
+		Task<UserViewModel?> InsertAsync(UserBindingModel model);
+		Task<UserViewModel?> UpdateAsync(UserBindingModel model);
+		Task<UserViewModel?> DeleteAsync(UserBindingModel model);
 	}
 }

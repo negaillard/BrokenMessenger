@@ -11,10 +11,10 @@ namespace Models.LogicContracts
 {
 	public interface IMessageLogic
 	{
-		Task<List<MessageViewModel>>? ReadList(MessageSearchModel? model);
-		Task<MessageViewModel>? ReadElement(MessageSearchModel model);
-		Task<bool> Create(MessageBindingModel model);
-		Task<bool> Update(MessageBindingModel model);
-		Task<bool> Delete(MessageBindingModel model);
+		Task<List<MessageViewModel>?> ReadListAsync(MessageSearchModel? model);
+		Task<MessageViewModel?> ReadElementAsync(MessageSearchModel model);
+		Task<bool> CreateAsync(MessageBindingModel model);
+		Task<bool> UpdateAsync(MessageBindingModel model);
+		Task<bool> DeleteAsync(MessageBindingModel model);
 	}
 }

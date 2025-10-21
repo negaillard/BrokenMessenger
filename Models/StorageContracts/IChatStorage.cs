@@ -11,11 +11,11 @@ namespace Models.StorageContracts
 {
 	public interface IChatStorage
 	{
-		Task<List<ChatViewModel>> GetFullList();
-		Task<List<ChatViewModel>> GetFilteredList(ChatSearchModel model);
-		Task<ChatViewModel>? GetElement(ChatSearchModel model);
-		Task<ChatViewModel>? Insert(ChatBindingModel model);
-		Task<ChatViewModel>? Update(ChatBindingModel model);
-		Task<ChatViewModel>? Delete(ChatBindingModel model);
+		Task<List<ChatViewModel>> GetFullListAsync();
+		Task<List<ChatViewModel>> GetFilteredListAsync(ChatSearchModel model);
+		Task<ChatViewModel?> GetElementAsync(ChatSearchModel model);
+		Task<ChatViewModel?> InsertAsync(ChatBindingModel model);
+		Task<ChatViewModel?> UpdateAsync(ChatBindingModel model);
+		Task<ChatViewModel?> DeleteAsync(ChatBindingModel model);
 	}
 }

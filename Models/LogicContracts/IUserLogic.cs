@@ -11,10 +11,10 @@ namespace Models.LogicContracts
 {
 	public interface IUserLogic
 	{
-		Task<List<UserViewModel>>? ReadList(UserSearchModel? model);
-		Task<UserViewModel>? ReadElement(UserSearchModel model);
-		Task<bool> Create(UserBindingModel model);
-		Task<bool> Update(UserBindingModel model);
-		Task<bool> Delete(UserBindingModel model);
+		Task<List<UserViewModel>?> ReadListAsync(UserSearchModel? model);
+		Task<UserViewModel?> ReadElementAsync(UserSearchModel model);
+		Task<bool> CreateAsync(UserBindingModel model);
+		Task<bool> UpdateAsync(UserBindingModel model);
+		Task<bool> DeleteAsync(UserBindingModel model);
 	}
 }

@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "BrokenMessenger": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}

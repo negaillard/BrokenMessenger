@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "RelayServer": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}

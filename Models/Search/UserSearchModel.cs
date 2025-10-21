@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Client.Models.Search
+namespace Models.Search
 {
 	public class UserSearchModel
 	{
-		public string? Username { get; set; }
-		public int? Id {  get; set; }
+		public int? Id { get; set; }
+		public string? Username { get; set; } 
 	}
 }

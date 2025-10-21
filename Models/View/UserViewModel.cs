@@ -1,16 +1,17 @@
-﻿using Client.Models.Interfaces;
+﻿using Interfaces;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Client.Models.View
+namespace Models.View
 {
 	public class UserViewModel : IUser
 	{
 		public int Id { get; set; }
-		public string Username { get; set; }
-		public string CurrentInterlocutor { get; set; }
+		[DisplayName("имя пользователя")]
+		public string Username { get; set; } = string.Empty;
 	}
 }

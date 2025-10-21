@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Client.Models.Interfaces
+namespace Interfaces
 {
 	public interface IUser
 	{

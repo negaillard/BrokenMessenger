@@ -1,10 +1,6 @@
-﻿using System;
-using System.Threading.Tasks;
-
-public class Program
+﻿public class Program
 {
 	private static ChatClient _client;
-	private static User _user;
 
 	public static async Task Main(string[] args)
 	{
@@ -14,7 +10,6 @@ public class Program
 		// Регистрация пользователя
 		string userName = GetUserName();
 		_client = new ChatClient(userName);
-		_user = _client.GetUser();
 
 		// Начинаем получать сообщения
 		_client.StartReceiving();
@@ -97,7 +92,7 @@ public class Program
 			return;
 		}
 
-		_user.SetCurrentInterlocutor(recipient);
+		await _client.SetCurrentInterlocutorAsync(recipient);
 		Console.WriteLine($"✅ Собеседник '{recipient}' установлен!");
 
 		// Показываем историю чата
@@ -106,13 +101,13 @@ public class Program
 
 	private static async Task SendMessage()
 	{
-		if (string.IsNullOrEmpty(_user.CurrentInterlocutor))
+		if (string.IsNullOrEmpty(_client.GetCurrentInterlocutor()))
 		{
 			Console.WriteLine("❌ Сначала выберите собеседника (пункт 1 в меню)");
 			return;
 		}
 
-		Console.Write($"Введите сообщение для {_user.CurrentInterlocutor}: ");
+		Console.Write($"Введите сообщение для {_client.GetCurrentInterlocutor()}: ");
 		string message = Console.ReadLine()?.Trim();
 
 		if (string.IsNullOrEmpty(message))
@@ -123,7 +118,7 @@ public class Program
 
 		try
 		{
-			_client.SendMessageAsync(_user.CurrentInterlocutor, message);
+			await _client.SendMessageAsync(message);
 		}
 		catch (Exception ex)
 		{

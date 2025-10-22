@@ -1,10 +1,4 @@
 ﻿using RabbitMQ.Client;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RelayServer
 {
@@ -24,8 +18,8 @@ namespace RelayServer
 
 			// создаём exchange для чата
 			_channel.ExchangeDeclare(
-				_exchange, 
-				ExchangeType.Direct, 
+				_exchange,
+				ExchangeType.Direct,
 				durable: false);
 			Console.WriteLine("Relay Server initialized with exchange 'chat.direct'");
 		}

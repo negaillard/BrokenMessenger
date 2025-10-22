@@ -1,6 +1,4 @@
-﻿// ChatClient/Program.cs
-using Client.Models;
-using System;
+﻿using System;
 using System.Threading.Tasks;
 
 public class Program
@@ -58,10 +56,10 @@ public class Program
 					await SendMessage();
 					break;
 				case "3":
-					_client.ShowCurrentChat();
+					await _client.ShowCurrentChatAsync();
 					break;
 				case "4":
-					_user.DisplayChats();
+					await _client.ShowAllChatsAsync();  // ЗДЕСЬ ИСПОЛЬЗУЕМ НОВЫЙ МЕТОД
 					break;
 				case "5":
 					Console.WriteLine("👋 До свидания!");
@@ -103,7 +101,7 @@ public class Program
 		Console.WriteLine($"✅ Собеседник '{recipient}' установлен!");
 
 		// Показываем историю чата
-		_client.ShowCurrentChat();
+		await _client.ShowCurrentChatAsync();
 	}
 
 	private static async Task SendMessage()
@@ -125,7 +123,7 @@ public class Program
 
 		try
 		{
-			_client.SendMessage(_user.CurrentInterlocutor, message);
+			_client.SendMessageAsync(_user.CurrentInterlocutor, message);
 		}
 		catch (Exception ex)
 		{

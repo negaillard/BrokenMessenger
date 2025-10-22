@@ -1,11 +1,9 @@
-﻿using Interfaces;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Models.Binding;
 using Models.Search;
 using Models.StorageContracts;
 using Models.View;
 using Storage.Models;
-using System.ComponentModel.DataAnnotations;
 
 namespace Storage.Repositories
 {

@@ -2,7 +2,6 @@
 using Models.Binding;
 using Models.View;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Storage.Models
 {

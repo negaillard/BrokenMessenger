@@ -30,25 +30,49 @@ namespace Storage.Repositories
 
 		public async Task<UserViewModel?> GetElementAsync(UserSearchModel model)
 		{
-			if (string.IsNullOrEmpty(model.Username) && !model.Id.HasValue)
+			var query = _context.Users.AsQueryable();
+
+
+			if (!string.IsNullOrEmpty(model.Username))
 			{
-				return null;
+				query = query.Where(x => x.Username == model.Username);
 			}
-			var entity = await _context.Users
-						.FirstOrDefaultAsync(x =>
-						(!string.IsNullOrEmpty(model.Username) && x.Username == model.Username) ||
-						(model.Id.HasValue && x.Id == model.Id));
+
+			if (!string.IsNullOrEmpty(model.Email))
+			{
+				query = query.Where(x => x.Email == model.Email);
+			}
+
+			var entity = await query.FirstOrDefaultAsync();
+
 			if (entity != null)
 			{
-				return entity.GetViewModel;
+				return new UserViewModel
+				{
+					Id = entity.Id,
+					Username = entity.Username,
+					Email = entity.Email,
+				};
 			}
+
 			return null;
 		}
 
 		public async Task<List<UserViewModel>> GetFilteredListAsync(UserSearchModel model)
 		{
-			return await _context.Users
-				.Where(x => !string.IsNullOrEmpty(model.Username) && x.Username == model.Username)
+			var query = _context.Users.AsQueryable();
+
+			if (!string.IsNullOrEmpty(model.Username))
+			{
+				query = query.Where(x => x.Username == model.Username);
+			}
+
+			if (!string.IsNullOrEmpty(model.Email))
+			{
+				query = query.Where(x => x.Email == model.Email);
+			}
+
+			return await query
 				.Select(x => x.GetViewModel)
 				.ToListAsync();
 		}

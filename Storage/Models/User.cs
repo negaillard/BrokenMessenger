@@ -11,6 +11,9 @@ namespace Storage.Models
 		[Required]
 		public string Username { get; private set; } = string.Empty;
 
+		[Required]
+		public string Email { get; private set; } = string.Empty;
+
 		public static User? Create(UserBindingModel model)
 		{
 			if (model == null)
@@ -21,6 +24,7 @@ namespace Storage.Models
 			{
 				Id = model.Id,
 				Username = model.Username,
+				Email = model.Email,
 			};
 		}
 		public void Update(UserBindingModel model)
@@ -30,11 +34,13 @@ namespace Storage.Models
 				return;
 			}
 			Username = model.Username;
+			Email = model.Email;
 		}
 		public UserViewModel GetViewModel => new()
 		{
 			Id = Id,
 			Username = Username,
+			Email = Email,
 		};
 	}
 }

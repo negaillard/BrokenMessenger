@@ -29,23 +29,6 @@ namespace Storage.Repositories
 			return null;
 		}
 
-		public async Task<ChatViewModel?> GetElemаentAsync(ChatSearchModel model)
-		{
-			if (string.IsNullOrEmpty(model.CurrentUser) && !model.Id.HasValue)
-			{
-				return null;
-			}
-			var entity = await _context.Chats
-						.FirstOrDefaultAsync(x =>
-						(!string.IsNullOrEmpty(model.CurrentUser) && x.CurrentUser == model.CurrentUser) ||
-						(model.Id.HasValue && x.Id == model.Id));
-			if (entity != null)
-			{
-				return entity.GetViewModel;
-			}
-			return null;
-		}
-
 		public async Task<ChatViewModel?> GetElementAsync(ChatSearchModel model)
 		{
 			if ((string.IsNullOrEmpty(model.CurrentUser) || string.IsNullOrEmpty(model.Interlocutor)) && !model.Id.HasValue)

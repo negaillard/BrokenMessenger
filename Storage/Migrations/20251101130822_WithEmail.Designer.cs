@@ -12,8 +12,8 @@ using Storage;
 namespace Storage.Migrations
 {
     [DbContext(typeof(ChatDatabase))]
-    [Migration("20251022094145_initialcreate")]
-    partial class initialcreate
+    [Migration("20251101130822_WithEmail")]
+    partial class WithEmail
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -89,6 +89,10 @@ namespace Storage.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Username")
                         .IsRequired()

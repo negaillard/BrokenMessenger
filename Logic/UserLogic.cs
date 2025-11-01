@@ -100,6 +100,10 @@ namespace Logic
 			{
 				throw new ArgumentNullException("Нет имени пользователя", nameof(model.Username));
 			}
+			if (string.IsNullOrEmpty(model.Email))
+			{
+				throw new ArgumentNullException("Нет электронной почты пользователя", nameof(model.Username));
+			}
 			//_logger.LogInformation("User. Name:{Name}. Id: {Id}", model.Username, model.Id);
 			var element = await _userStorage.GetElementAsync(new UserSearchModel
 			{

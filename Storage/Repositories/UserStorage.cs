@@ -14,6 +14,7 @@ namespace Storage.Repositories
 		public UserStorage(string username)
 		{
 			_context = new ChatDatabase(username);
+			_context.Database.EnsureCreated();
 		}
 		public async Task<UserViewModel?> DeleteAsync(UserBindingModel model)
 		{

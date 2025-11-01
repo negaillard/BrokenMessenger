@@ -14,6 +14,7 @@ namespace Storage.Repositories
 		public MessageStorage(string username)
 		{
 			_context = new ChatDatabase(username);
+			_context.Database.EnsureCreated();
 		}
 		public async Task<MessageViewModel?> DeleteAsync(MessageBindingModel model)
 		{
@@ -49,8 +50,35 @@ namespace Storage.Repositories
 
 		public async Task<List<MessageViewModel>> GetFilteredListAsync(MessageSearchModel model)
 		{
-			return await _context.Messages
-				.Where(x => model.Id.HasValue && x.ChatId == model.ChatId)
+			var query = _context.Messages.AsQueryable();
+
+			// Добавляем условия фильтрации, если параметры указаны
+			if (model.Id.HasValue)
+			{
+				query = query.Where(x => x.Id == model.Id.Value);
+			}
+
+			if (model.ChatId.HasValue)
+			{
+				query = query.Where(x => x.ChatId == model.ChatId.Value);
+			}
+
+			if (!string.IsNullOrEmpty(model.Sender))
+			{
+				query = query.Where(x => x.Sender == model.Sender);
+			}
+
+			if (!string.IsNullOrEmpty(model.Recipient))
+			{
+				query = query.Where(x => x.Recipient == model.Recipient);
+			}
+
+			if (!string.IsNullOrEmpty(model.Content))
+			{
+				query = query.Where(x => x.Content.Contains(model.Content));
+			}
+
+			return await query
 				.Select(x => x.GetViewModel)
 				.ToListAsync();
 		}

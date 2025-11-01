@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Storage.Models;
 
 namespace Storage
@@ -16,17 +17,19 @@ namespace Storage
 		{
 			if (!optionsBuilder.IsConfigured)
 			{
-				// Уникальное имя БД для каждого пользователя
 				var databaseName = $"ChatClient_{_userName}";
+				var connectionString = @$"Data Source=localhost\SQLEXPRESS;
+									Initial Catalog={databaseName};
+									Integrated Security=True;
+									MultipleActiveResultSets=True;
+									TrustServerCertificate=True";
 
-				optionsBuilder.UseSqlServer(@$"Data Source=localhost\SQLEXPRESS;
-												Initial Catalog={databaseName};
-												Integrated Security=True;
-												MultipleActiveResultSets=True;
-												TrustServerCertificate=True");
+				optionsBuilder.UseSqlServer(connectionString);
 			}
 			base.OnConfiguring(optionsBuilder);
 		}
+
+		// УБЕРИ метод EnsureDatabaseCreated - он не нужен
 
 		public virtual DbSet<User> Users { get; set; }
 		public virtual DbSet<Chat> Chats { get; set; }

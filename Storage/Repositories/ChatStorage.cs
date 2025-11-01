@@ -14,6 +14,7 @@ namespace Storage.Repositories
 		public ChatStorage(string username)
 		{
 			_context = new ChatDatabase(username);
+			_context.Database.EnsureCreated();
 		}
 
 		public async Task<ChatViewModel?> DeleteAsync(ChatBindingModel model)
@@ -28,7 +29,7 @@ namespace Storage.Repositories
 			return null;
 		}
 
-		public async Task<ChatViewModel?> GetElementAsync(ChatSearchModel model)
+		public async Task<ChatViewModel?> GetElemаentAsync(ChatSearchModel model)
 		{
 			if (string.IsNullOrEmpty(model.CurrentUser) && !model.Id.HasValue)
 			{
@@ -45,10 +46,40 @@ namespace Storage.Repositories
 			return null;
 		}
 
+		public async Task<ChatViewModel?> GetElementAsync(ChatSearchModel model)
+		{
+			if ((string.IsNullOrEmpty(model.CurrentUser) || string.IsNullOrEmpty(model.Interlocutor)) && !model.Id.HasValue)
+			{
+				return null;
+			}
+			var entity = await _context.Chats
+				.FirstOrDefaultAsync(x =>
+					(x.CurrentUser == model.CurrentUser &&
+					x.Interlocutor == model.Interlocutor) ||
+					(model.Id.HasValue && x.Id == model.Id));
+
+			if (entity != null)
+			{
+				return entity.GetViewModel;
+			}
+			return null;
+		}
+
 		public async Task<List<ChatViewModel>> GetFilteredListAsync(ChatSearchModel model)
 		{
-			return await _context.Chats
-				.Where(x => !string.IsNullOrEmpty(model.CurrentUser) && x.CurrentUser == model.CurrentUser)
+			var query = _context.Chats.AsQueryable();
+
+			if (!string.IsNullOrEmpty(model.CurrentUser))
+			{
+				query = query.Where(x => x.CurrentUser == model.CurrentUser);
+			}
+
+			if (!string.IsNullOrEmpty(model.Interlocutor))
+			{
+				query = query.Where(x => x.Interlocutor == model.Interlocutor);
+			}
+
+			return await query
 				.Select(x => x.GetViewModel)
 				.ToListAsync();
 		}

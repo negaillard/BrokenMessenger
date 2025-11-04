@@ -1,6 +1,5 @@
 ﻿using AuthServerAPI.Logic;
 using AuthServerAPI.Models;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AuthServerAPI.Controllers
@@ -20,80 +19,85 @@ namespace AuthServerAPI.Controllers
 		// Доступен всем
 		
 		[HttpGet]
-		public IActionResult GetAll()
+		public async Task<IActionResult> GetAll()
 		{
 			//_logger.LogInformation("Попытка получения списка факультетов");
-			return Ok(_userLogic.ReadListAsync(null));
+			var users = await _userLogic.ReadListAsync(null); 
+			return Ok(users);
 		}
 
 		// Доступен всем
 		
 		[HttpGet("{id}")]
-		public IActionResult GetById(int id)
+		public async Task<IActionResult> GetById(int id)
 		{
 			//_logger.LogInformation($"Попытка получения факультета по id{id}");
-			var userulty = _userLogic.ReadElementAsync(new UserSearchModel { Id = id });
-			if (userulty == null)
+			var user = await _userLogic.ReadElementAsync(new UserSearchModel { Id = id });
+			if (user == null)
 			{
 				//_logger.LogWarning($"Факультет по id{id} не найден");
 				return NotFound();
 			}
 			//_logger.LogInformation($"Факультет по id{id} найден");
-			return Ok(userulty);
+			return Ok(user);
 		}
 
 		// Только для админа
 		[HttpPost]
-		public IActionResult Create([FromBody] UserBindingModel model)
+		public async Task<IActionResult> Create([FromBody] UserBindingModel model)
 		{
 			try
 			{
-				//_logger.LogInformation($"Попытка создания факультета c id{model.Id}");
-				if (!_userLogic.CreateAsync(model))
+				// _logger.LogInformation($"Попытка создания факультета c id{model.Id}");
+				var result = await _userLogic.CreateAsync(model); // ← await
+				if (!result)
 				{
 					//_logger.LogWarning($"Факультет c id{model.Id} не был создан");
-					return BadRequest("Ошибка при создании факультета");
+
+					return BadRequest("Ошибка при создании пользователя");
 				}
 				//_logger.LogInformation($"Факультет c id{model.Id} был создан");
-				return Ok("Факультет успешно создан");
+				return Ok("Пользователь успешно создан");
 			}
 			catch (Exception ex)
 			{
-				return BadRequest("Ошибка при создании факультета" + ex.Message);
+				return BadRequest("Ошибка при создании пользователя" + ex.Message);
 			}
 		}
 
 		// Только для админа
 		[HttpPut]
-		public IActionResult Update([FromBody] UserBindingModel model)
+		public async Task<IActionResult> Update([FromBody] UserBindingModel model)
 		{
 			try
 			{
-				if (!_userLogic.UpdateAsync(model))
+				var updatedUser = await _userLogic.UpdateAsync(model);
+				if (!updatedUser)
 				{
 					//_logger.LogWarning($"Факультет c id{model.Id} не был обновлен");
-					return BadRequest("Ошибка при обновлении факультета");
+					return BadRequest("Ошибка при обновлении пользователя");
 				}
 				//_logger.LogInformation($"Факультет c id{model.Id} был обновлен");
-				return Ok("Факультет успешно обновлён");
+				return Ok("Пользователь успешно обновлён");
 			}
 			catch (Exception ex)
 			{
-				return BadRequest("Ошибка при обновлении факультета" + ex.Message);
+				return BadRequest("Ошибка при обновлении пользователя" + ex.Message);
 			}
 		}
 
 		// Только для админа
 		[HttpDelete("{id}")]
-		public IActionResult Delete(int id)
+		public async Task<IActionResult> Delete(int id)
 		{
-			if (!_userLogic.DeleteAsync(new UserBindingModel { Id = id }))
+			var deletedUser = await _userLogic.DeleteAsync(new UserBindingModel { Id = id });
+			if (!deletedUser)
 			{
 				//_logger.LogWarning($"Факультет c id{id} не был удален");
-				return BadRequest("Ошибка при удалении факультета");
+				return BadRequest("Ошибка при удалении пользователя");
 			}
 			//_logger.LogInformation($"Факультет c id{id} был удален");
-			return Ok("Факультет успешно удалён");
+			return Ok("Пользователь успешно удалён");
 		}
 	}
 }

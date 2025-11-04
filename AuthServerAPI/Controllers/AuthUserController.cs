@@ -42,6 +42,34 @@ namespace AuthServerAPI.Controllers
 			return Ok(user);
 		}
 
+		[HttpGet("{id}")]
+		public async Task<IActionResult> GetByUsername(string username)
+		{
+			//_logger.LogInformation($"Попытка получения факультета по id{id}");
+			var user = await _userLogic.ReadElementAsync(new UserSearchModel { Username = username });
+			if (user == null)
+			{
+				//_logger.LogWarning($"Факультет по id{id} не найден");
+				return NotFound();
+			}
+			//_logger.LogInformation($"Факультет по id{id} найден");
+			return Ok(user);
+		}
+
+		[HttpGet("{id}")]
+		public async Task<IActionResult> GetByEmail(string email)
+		{
+			//_logger.LogInformation($"Попытка получения факультета по id{id}");
+			var user = await _userLogic.ReadElementAsync(new UserSearchModel { Email = email });
+			if (user == null)
+			{
+				//_logger.LogWarning($"Факультет по id{id} не найден");
+				return NotFound();
+			}
+			//_logger.LogInformation($"Факультет по id{id} найден");
+			return Ok(user);
+		}
+
 		// Только для админа
 		[HttpPost]
 		public async Task<IActionResult> Create([FromBody] UserBindingModel model)

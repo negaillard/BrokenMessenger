@@ -1,7 +1,13 @@
-﻿namespace AuthServerAPI.Logic
+﻿using AuthServerAPI.Models;
+
+namespace AuthServerAPI.Logic
 {
 	public interface IUserLogic
 	{
-
+		Task<List<UserBindingModel>?> ReadListAsync(UserSearchModel? model);
+		Task<UserBindingModel?> ReadElementAsync(UserSearchModel model);
+		Task<bool> CreateAsync(UserBindingModel model);
+		Task<bool> UpdateAsync(UserBindingModel model);
+		Task<bool> DeleteAsync(UserBindingModel model);
 	}
 }

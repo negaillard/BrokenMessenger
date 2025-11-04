@@ -4,11 +4,11 @@ namespace AuthServerAPI.Storage
 {
 	public interface IUserStorage
 	{
-		List<UserBindingModel> GetFullListAsync();
-		List<UserBindingModel> GetFilteredListAsync(UserSearchModel model);
-		UserBindingModel? GetElementAsync (UserSearchModel model);
-		UserBindingModel? InsertElementAsync(UserBindingModel model);
-		UserBindingModel? UpdateAsync(UserBindingModel model);
-		UserBindingModel? DeleteAsync(UserBindingModel model);
+		Task<List<UserBindingModel>> GetFullListAsync();
+		Task<List<UserBindingModel>> GetFilteredListAsync(UserSearchModel model);
+		Task<UserBindingModel?> GetElementAsync (UserSearchModel model);
+		Task<UserBindingModel?> InsertElementAsync(UserBindingModel model);
+		Task<UserBindingModel?> UpdateAsync(UserBindingModel model);
+		Task<UserBindingModel?> DeleteAsync(UserBindingModel model);
 	}
 }

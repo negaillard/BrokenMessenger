@@ -1,4 +1,5 @@
-﻿using AuthServerAPI.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using AuthServerAPI.Models;
 
 namespace AuthServerAPI.Storage
 {
@@ -17,7 +18,7 @@ namespace AuthServerAPI.Storage
 			{
 				_context.Users.Remove(element);
 				await _context.SaveChangesAsync();
-				return element.GetViewModel;
+				return element.GetBindingModel;
 			}
 			return null;
 		}
@@ -67,18 +68,18 @@ namespace AuthServerAPI.Storage
 			}
 
 			return await query
-				.Select(x => x.GetViewModel)
+				.Select(x => x.GetBindingModel)
 				.ToListAsync();
 		}
 
 		public async Task<List<UserBindingModel>> GetFullListAsync()
 		{
 			return await _context.Users
-				.Select(x => x.GetViewModel)
+				.Select(x => x.GetBindingModel)
 				.ToListAsync();
 		}
 
-		public async Task<UserBindingModel?> InsertAsync(UserBindingModel model)
+		public async Task<UserBindingModel?> InsertElementAsync(UserBindingModel model)
 		{
 			var newUser = AuthUser.Create(model);
 			if (newUser == null)
@@ -87,7 +88,7 @@ namespace AuthServerAPI.Storage
 			}
 			await _context.Users.AddAsync(newUser);
 			await _context.SaveChangesAsync();
-			return newUser.GetViewModel;
+			return newUser.GetBindingModel;
 		}
 
 		public async Task<UserBindingModel?> UpdateAsync(UserBindingModel model)
@@ -99,7 +100,7 @@ namespace AuthServerAPI.Storage
 			}
 			chat.Update(model);
 			await _context.SaveChangesAsync();
-			return chat.GetViewModel;
+			return chat.GetBindingModel;
 		}
 	}
 }

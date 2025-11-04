@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 
 namespace AuthServerAPI.Storage
 {
-	public class Context
+	public class Context : DbContext
 	{
 		protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 		{
@@ -12,6 +13,6 @@ namespace AuthServerAPI.Storage
 		                                  TrustServerCertificate=True");
 		}
 
-		public virtual DbSet<User> Users { get; set; }
+		public virtual DbSet<AuthUser> Users { get; set; }
 	}
 }

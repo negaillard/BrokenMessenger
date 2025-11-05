@@ -1,4 +1,4 @@
-﻿using AuthServerAPI.Logic;
+﻿using AuthServerAPI.Logic.Interfaces;
 using AuthServerAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,32 +14,6 @@ namespace AuthServerAPI.Controllers
 		public AuthUserController(IUserLogic userLogic)
 		{
 			_userLogic = userLogic;
-		}
-
-		// Доступен всем
-		
-		[HttpGet]
-		public async Task<IActionResult> GetAll()
-		{
-			//_logger.LogInformation("Попытка получения списка факультетов");
-			var users = await _userLogic.ReadListAsync(null); 
-			return Ok(users);
-		}
-
-		// Доступен всем
-		
-		[HttpGet("{id}")]
-		public async Task<IActionResult> GetById(int id)
-		{
-			//_logger.LogInformation($"Попытка получения факультета по id{id}");
-			var user = await _userLogic.ReadElementAsync(new UserSearchModel { Id = id });
-			if (user == null)
-			{
-				//_logger.LogWarning($"Факультет по id{id} не найден");
-				return NotFound();
-			}
-			//_logger.LogInformation($"Факультет по id{id} найден");
-			return Ok(user);
 		}
 
 		[HttpGet("{id}")]
@@ -93,6 +67,31 @@ namespace AuthServerAPI.Controllers
 			}
 		}
 
+		#region Useless methods
+		// Доступен всем
+		[HttpGet]
+		public async Task<IActionResult> GetAll()
+		{
+			//_logger.LogInformation("Попытка получения списка факультетов");
+			var users = await _userLogic.ReadListAsync(null);
+			return Ok(users);
+		}
+
+		// Доступен всем
+		[HttpGet("{id}")]
+		public async Task<IActionResult> GetById(int id)
+		{
+			//_logger.LogInformation($"Попытка получения факультета по id{id}");
+			var user = await _userLogic.ReadElementAsync(new UserSearchModel { Id = id });
+			if (user == null)
+			{
+				//_logger.LogWarning($"Факультет по id{id} не найден");
+				return NotFound();
+			}
+			//_logger.LogInformation($"Факультет по id{id} найден");
+			return Ok(user);
+		}
+
 		// Только для админа
 		[HttpPut]
 		public async Task<IActionResult> Update([FromBody] UserBindingModel model)
@@ -127,5 +126,6 @@ namespace AuthServerAPI.Controllers
 			//_logger.LogInformation($"Факультет c id{id} был удален");
 			return Ok("Пользователь успешно удалён");
 		}
+		#endregion
 	}
 }

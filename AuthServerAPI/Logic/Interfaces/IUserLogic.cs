@@ -1,6 +1,6 @@
 ﻿using AuthServerAPI.Models;
 
-namespace AuthServerAPI.Logic
+namespace AuthServerAPI.Logic.Interfaces
 {
 	public interface IUserLogic
 	{

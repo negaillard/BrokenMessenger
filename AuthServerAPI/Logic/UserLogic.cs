@@ -1,4 +1,5 @@
-﻿using AuthServerAPI.Models;
+﻿using AuthServerAPI.Logic.Interfaces;
+using AuthServerAPI.Models;
 using AuthServerAPI.Storage;
 
 namespace AuthServerAPI.Logic

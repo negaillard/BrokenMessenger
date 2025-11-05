@@ -12,7 +12,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-
+// это надо чтобы подставить значения из конфига(логин и пароль)
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddSingleton<IEmailService, EmailService>();
 builder.Services.AddTransient<IAuthService, AuthService>();

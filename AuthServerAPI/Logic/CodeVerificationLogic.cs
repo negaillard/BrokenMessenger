@@ -67,7 +67,7 @@ namespace AuthServerAPI.Logic
 				});
 
 				// Отправляем email
-				await _emailService.SendVerificationCodeAsync(email, code, type.ToString());
+				await _emailService.SendVerificationCodeAsync(email, code, type);
 
 				return (true, "Код отправлен на email");
 			}

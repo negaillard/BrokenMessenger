@@ -10,16 +10,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-var app = builder.Build();
-
 // это надо чтобы подставить значения из конфига(логин и пароль)
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddSingleton<IEmailService, EmailService>();
-builder.Services.AddTransient<IAuthService, AuthService>();
 builder.Services.AddTransient<ICodeVerificationLogic, CodeVerificationLogic>();
 builder.Services.AddTransient<IUserLogic, UserLogic>();
 
 builder.Services.AddTransient<IUserStorage, UserStorage>();
+
+var app = builder.Build();
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

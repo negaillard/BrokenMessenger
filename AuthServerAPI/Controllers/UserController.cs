@@ -6,12 +6,12 @@ namespace AuthServerAPI.Controllers
 {
 	[Route("api/[controller]")]
 	[ApiController]
-	public class AuthUserController : ControllerBase
+	public class UserController : ControllerBase
 	{
 		private readonly IUserLogic _userLogic;
 		//private readonly ILogger<AuthUserController> _logger;
 
-		public AuthUserController(IUserLogic userLogic)
+		public UserController(IUserLogic userLogic)
 		{
 			_userLogic = userLogic;
 		}

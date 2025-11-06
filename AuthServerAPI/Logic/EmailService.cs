@@ -30,7 +30,7 @@ namespace AuthServerAPI.Logic
 				{
 					message.Subject = "Код подтверждения регистрации";
 				}
-				else // Login
+				else 
 				{
 					message.Subject = "Код для входа в аккаунт";
 				}

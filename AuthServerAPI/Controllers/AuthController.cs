@@ -25,77 +25,6 @@ namespace AuthServerAPI.Controllers
 			_logger = logger;
 		}
 
-		// Проверка доступности username
-		[HttpPost]
-		public async Task<IActionResult> CheckUsername([FromBody] UsernameCheckRequest request)
-		{
-			try
-			{
-				_logger.LogInformation($"Проверка username: {request.Username}");
-
-				var existingUser = await _userLogic.ReadElementAsync(new UserSearchModel
-				{
-					Username = request.Username
-				});
-
-				if (existingUser != null)
-				{
-					return Ok(new
-					{
-						available = false,
-						message = "Username уже занят"
-					});
-				}
-
-				return Ok(new
-				{
-					available = true,
-					message = "Username доступен"
-				});
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex, "Ошибка при проверке username");
-				return BadRequest(new { error = "Ошибка сервера" });
-			}
-		}
-
-		// Проверка доступности email
-		[HttpPost]
-		public async Task<IActionResult> CheckEmail([FromBody] EmailCheckRequest request)
-		{
-			try
-			{
-				_logger.LogInformation($"Проверка username: {request.Email}");
-
-				var existingUser = await _userLogic.ReadElementAsync(new UserSearchModel
-				{
-					Email = request.Email
-				});
-
-				if (existingUser != null)
-				{
-					return Ok(new
-					{
-						available = false,
-						message = "Email уже зарегистрирован"
-					});
-				}
-
-				return Ok(new
-				{
-					available = true,
-					message = "Email доступен"
-				});
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex, "Ошибка при проверке Email");
-				return BadRequest(new { error = "Ошибка сервера" });
-			}
-		}
-
-
 		[HttpPost]
 		public async Task<IActionResult> SendRegistrationCode([FromBody] RegistrationRequest request)
 		{
@@ -248,5 +177,77 @@ namespace AuthServerAPI.Controllers
 				return BadRequest(new { error = "Ошибка сервера" });
 			}
 		}
+
+		#region Нахуй не нужны
+		// Проверка доступности username
+		[HttpPost]
+		public async Task<IActionResult> CheckUsername([FromBody] UsernameCheckRequest request)
+		{
+			try
+			{
+				_logger.LogInformation($"Проверка username: {request.Username}");
+
+				var existingUser = await _userLogic.ReadElementAsync(new UserSearchModel
+				{
+					Username = request.Username
+				});
+
+				if (existingUser != null)
+				{
+					return Ok(new
+					{
+						available = false,
+						message = "Username уже занят"
+					});
+				}
+
+				return Ok(new
+				{
+					available = true,
+					message = "Username доступен"
+				});
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Ошибка при проверке username");
+				return BadRequest(new { error = "Ошибка сервера" });
+			}
+		}
+
+		// Проверка доступности email
+		[HttpPost]
+		public async Task<IActionResult> CheckEmail([FromBody] EmailCheckRequest request)
+		{
+			try
+			{
+				_logger.LogInformation($"Проверка username: {request.Email}");
+
+				var existingUser = await _userLogic.ReadElementAsync(new UserSearchModel
+				{
+					Email = request.Email
+				});
+
+				if (existingUser != null)
+				{
+					return Ok(new
+					{
+						available = false,
+						message = "Email уже зарегистрирован"
+					});
+				}
+
+				return Ok(new
+				{
+					available = true,
+					message = "Email доступен"
+				});
+			}
+			catch (Exception ex)
+			{
+				_logger.LogError(ex, "Ошибка при проверке Email");
+				return BadRequest(new { error = "Ошибка сервера" });
+			}
+		}
+		#endregion
 	}
 }

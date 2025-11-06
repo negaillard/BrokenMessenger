@@ -10,6 +10,25 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Добавляем Redis
+// по сути мы здесь указываем, что Redis реализует IDistributedCache, хотя явно мы это не указали,
+// но это тот же AddTransient
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+	//берем значение из блока ConnectionStrings со значением Redis (из appsetttings.json)
+	options.Configuration = builder.Configuration.GetConnectionString("Redis");
+	//берем значение из блока Redis со значением InstanceName (из appsetttings.json)
+	options.InstanceName = builder.Configuration["Redis:InstanceName"];
+});
+
+
+// Регистрируем настройки Redis
+// ASP.NET Core автоматически находит раздел "Redis" в appsettings.json
+//Создает экземпляр RedisSettings
+//Заполняет свойство VerificationCodeExpirationMinutes значением из конфига
+//Регистрирует это в DI-контейнере как IOptions<RedisSettings>
+builder.Services.Configure<RedisSettings>(builder.Configuration.GetSection("Redis"));
+
 // это надо чтобы подставить значения из конфига(логин и пароль)
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddSingleton<IEmailService, EmailService>();

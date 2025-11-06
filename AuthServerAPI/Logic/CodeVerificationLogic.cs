@@ -6,6 +6,9 @@ using System.Text.Json;
 
 namespace AuthServerAPI.Logic
 {
+	/// <summary>
+	///  ЗДЕСЬ ИСПОЛЬЗУЕТСЯ REDIS
+	/// </summary>
 	public class CodeVerificationLogic : ICodeVerificationLogic
 	{
 		private readonly IDistributedCache _cache;
@@ -41,10 +44,18 @@ namespace AuthServerAPI.Logic
 				}
 
 				// Устанавливаем rate limit на 1 минуту
-				await _cache.SetStringAsync(rateLimitKey, "1", new DistributedCacheEntryOptions
-				{
-					AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)
-				});
+				// Как будут выглядеть ключи в redis с использованием InstanceName = "AuthServer_"
+				// Это нужно, что 
+				// AuthServer_verification:EmailVerification:user@example.com
+				// AuthServer_ratelimit:user@example.com
+
+				await _cache.SetStringAsync(
+					key: rateLimitKey, 
+					value: "1", 
+					options: new DistributedCacheEntryOptions
+					{
+						AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1)
+					});
 
 				// Генерируем код
 				var code = GenerateCode();
@@ -61,10 +72,13 @@ namespace AuthServerAPI.Logic
 				var cacheKey = GetCacheKey(email, type);
 				var serializedCodeInfo = JsonSerializer.Serialize(codeInfo);
 
-				await _cache.SetStringAsync(cacheKey, serializedCodeInfo, new DistributedCacheEntryOptions
-				{
-					AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_settings.VerificationCodeExpirationMinutes)
-				});
+				await _cache.SetStringAsync(
+					key: cacheKey, 
+					value: serializedCodeInfo, 
+					options: new DistributedCacheEntryOptions
+					{
+						AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_settings.VerificationCodeExpirationMinutes)
+					});
 
 				// Отправляем email
 				await _emailService.SendVerificationCodeAsync(email, code, type);
@@ -102,10 +116,13 @@ namespace AuthServerAPI.Logic
 					// Увеличиваем счетчик попыток
 					codeInfo.Attempts++;
 					var updatedSerializedCodeInfo = JsonSerializer.Serialize(codeInfo);
-					await _cache.SetStringAsync(cacheKey, updatedSerializedCodeInfo, new DistributedCacheEntryOptions
-					{
-						AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_settings.VerificationCodeExpirationMinutes)
-					});
+					await _cache.SetStringAsync(
+						key: cacheKey, 
+						value: updatedSerializedCodeInfo, 
+						options:new DistributedCacheEntryOptions
+						{
+							AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(_settings.VerificationCodeExpirationMinutes)
+						});
 
 					var attemptsLeft = 3 - codeInfo.Attempts;
 					return (false, $"Неверный код. Осталось попыток: {attemptsLeft}");
@@ -121,6 +138,14 @@ namespace AuthServerAPI.Logic
 			}
 		}
 
+		private static string GetCacheKey(string email, VerificationType type)
+		{
+			// verification:Login:anasirov@gmail.com
+			return $"verification:{type}:{email.ToLowerInvariant()}";
+		}
+
+
+		#region нахуй не нужны
 		public async Task<bool> IsCodeSentAsync(string email, VerificationType type)
 		{
 			var cacheKey = GetCacheKey(email, type);
@@ -135,11 +160,7 @@ namespace AuthServerAPI.Logic
 			var codeInfo = await _cache.GetStringAsync(cacheKey);
 			return codeInfo != null ? TimeSpan.FromMinutes(5) : null; // Упрощенная версия
 		}
-
-		private static string GetCacheKey(string email, VerificationType type)
-		{
-			return $"verification:{type}:{email.ToLowerInvariant()}";
-		}
+		#endregion
 	}
 
 	public class RedisSettings

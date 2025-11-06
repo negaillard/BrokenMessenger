@@ -31,11 +31,14 @@ builder.Services.Configure<RedisSettings>(builder.Configuration.GetSection("Redi
 
 // это надо чтобы подставить значени€ из конфига(логин и пароль)
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
-builder.Services.AddSingleton<IEmailService, EmailService>();
-builder.Services.AddTransient<ICodeVerificationLogic, CodeVerificationLogic>();
-builder.Services.AddTransient<IUserLogic, UserLogic>();
 
-builder.Services.AddTransient<IUserStorage, UserStorage>();
+
+builder.Services.AddSingleton<IEmailService, EmailService>();
+// AddScoped - один экземпл€р класса на один http запрос
+builder.Services.AddScoped<ICodeVerificationLogic, CodeVerificationLogic>();
+builder.Services.AddScoped<IUserLogic, UserLogic>();
+
+builder.Services.AddScoped<IUserStorage, UserStorage>();
 
 var app = builder.Build();
 

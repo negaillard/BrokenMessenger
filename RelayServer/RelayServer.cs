@@ -1,10 +1,4 @@
 ﻿using RabbitMQ.Client;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RelayServer
 {
@@ -24,9 +18,10 @@ namespace RelayServer
 
 			// создаём exchange для чата
 			_channel.ExchangeDeclare(
-				_exchange, 
-				ExchangeType.Direct, 
-				durable: false);
+				_exchange,				// имя обменника
+				ExchangeType.Direct,	// тип обменника (direct - будет сравнивать только по routing key)
+				durable: true			// durability устойчивость выключена 
+				);
 			Console.WriteLine("Relay Server initialized with exchange 'chat.direct'");
 		}
 	}

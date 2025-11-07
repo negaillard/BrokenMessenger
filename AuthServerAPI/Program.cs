@@ -33,7 +33,7 @@ builder.Services.Configure<RedisSettings>(builder.Configuration.GetSection("Redi
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
 
-builder.Services.AddSingleton<IEmailService, EmailService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 // AddScoped - один экземпляр класса на один http запрос
 builder.Services.AddScoped<ICodeVerificationLogic, CodeVerificationLogic>();
 builder.Services.AddScoped<IUserLogic, UserLogic>();

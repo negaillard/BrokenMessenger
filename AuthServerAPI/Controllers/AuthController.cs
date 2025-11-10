@@ -12,16 +12,19 @@ namespace AuthServerAPI.Controllers
 	public class AuthController : ControllerBase
 	{
 		private readonly IUserLogic _userLogic;
-		private readonly CodeVerificationLogic _codeVerificationLogic;
+		private readonly ICodeVerificationLogic _codeVerificationLogic;
+		private readonly ISessionService _sessionService;
 		private readonly ILogger<AuthController> _logger;
 
 		public AuthController(
 		  IUserLogic userLogic,
-		  CodeVerificationLogic codeVerificationLogic,
+		  ICodeVerificationLogic codeVerificationLogic,
+		  ISessionService sessionService,
 		  ILogger<AuthController> logger)
 		{
 			_userLogic = userLogic;
 			_codeVerificationLogic = codeVerificationLogic;
+			_sessionService = sessionService;
 			_logger = logger;
 		}
 
@@ -163,12 +166,17 @@ namespace AuthServerAPI.Controllers
 					return BadRequest(new { error = codeResult.message });
 				}
 
-				_logger.LogInformation($"Успешный вход: {request.Username}");
+				var sessionId = await _sessionService.CreateSessionAsync(user.Id, user.Username);
+
+				_logger.LogInformation($"Успешный вход: {request.Username}, session: {sessionId}");
+
 				return Ok(new
 				{
 					message = "Вход выполнен успешно",
 					username = user.Username,
-					userId = user.Id
+					userId = user.Id,
+					sessionToken = sessionId, 
+					expiresAt = DateTime.UtcNow.AddHours(24)
 				});
 			}
 			catch (Exception ex)
@@ -176,6 +184,27 @@ namespace AuthServerAPI.Controllers
 				_logger.LogError(ex, "Ошибка при подтверждении входа");
 				return BadRequest(new { error = "Ошибка сервера" });
 			}
+		}
+
+		[HttpPost]
+		public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+		{
+			await _sessionService.DeleteSessionAsync(request.SessionToken);
+			return Ok(new { message = "Выход выполнен" });
+		}
+
+		[HttpGet]
+		public async Task<IActionResult> ValidateSession([FromHeader] string authorization)
+		{
+			var sessionId = authorization?.Replace("Bearer ", "");
+			if (string.IsNullOrEmpty(sessionId))
+				return Unauthorized();
+
+			var isValid = await _sessionService.ValidateSessionAsync(sessionId);
+			if (!isValid)
+				return Unauthorized();
+
+			return Ok(new { valid = true });
 		}
 
 		#region Нахуй не нужны

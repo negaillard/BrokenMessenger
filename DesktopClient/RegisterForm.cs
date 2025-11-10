@@ -21,64 +21,12 @@ namespace DesktopClient
 			CenterControls();
 		}
 
-		private void RegistrationForm_SizeChanged(object sender, EventArgs e)
-		{
-			if (this.IsHandleCreated && panelMain != null)
-			{
-				CenterControls();
-			}
-		}
-
-		private void CenterControls()
-		{
-			try
-			{
-				if (panelMain == null || lblTitle == null)
-					return;
-
-				// Центрируем заголовок
-				lblTitle.Left = (panelMain.Width - lblTitle.Width) / 2;
-
-				// Центрируем панель формы
-				var formPanel = panelMain.Controls.OfType<Panel>()
-					.FirstOrDefault(p => p.BackColor == Color.White);
-				if (formPanel != null)
-				{
-					formPanel.Left = (panelMain.Width - formPanel.Width) / 2;
-					formPanel.Top = (panelMain.Height - formPanel.Height) / 2;
-				}
-
-				// Обновляем позиции кнопок выхода и сворачивания
-				var exitButton = panelMain.Controls.OfType<Button>()
-					.FirstOrDefault(b => b.Text == "✕");
-				if (exitButton != null)
-				{
-					exitButton.Left = panelMain.Width - 50;
-				}
-
-				var minimizeButton = panelMain.Controls.OfType<Button>()
-					.FirstOrDefault(b => b.Text == "─");
-				if (minimizeButton != null)
-				{
-					minimizeButton.Left = panelMain.Width - 90;
-				}
-			}
-			catch (Exception ex)
-			{
-				System.Diagnostics.Debug.WriteLine($"CenterControls error: {ex.Message}");
-			}
-		}
-
+		#region валидация
 		// Валидация имени пользователя
 		private void TxtUsername_TextChanged(object sender, EventArgs e)
 		{
 			ValidateUsername();
 			UpdateGetCodeButton();
-		}
-
-		private void TxtUsername_Enter(object sender, EventArgs e)
-		{
-			txtUsername.BackColor = Color.FromArgb(240, 248, 255); // Light blue
 		}
 
 		private void TxtUsername_Leave(object sender, EventArgs e)
@@ -92,17 +40,6 @@ namespace DesktopClient
 		{
 			ValidateEmail();
 			UpdateGetCodeButton();
-		}
-
-		private void TxtEmail_Enter(object sender, EventArgs e)
-		{
-			txtEmail.BackColor = Color.FromArgb(240, 248, 255);
-		}
-
-		private void TxtEmail_Leave(object sender, EventArgs e)
-		{
-			txtEmail.BackColor = Color.White;
-			ValidateEmail();
 		}
 
 		private void ValidateUsername()
@@ -167,7 +104,9 @@ namespace DesktopClient
 				return false;
 			}
 		}
+		#endregion
 
+		#region для визуала
 		private void ShowUsernameError(string message)
 		{
 			lblUsernameError.Text = message;
@@ -236,6 +175,79 @@ namespace DesktopClient
 			}
 		}
 
+		private void BtnBack_Click(object sender, EventArgs e)
+		{
+			// Возврат к WelcomeForm
+			var welcomeForm = new WelcomeForm();
+			welcomeForm.Show();
+			this.Hide();
+		}
+
+		private void TxtEmail_Enter(object sender, EventArgs e)
+		{
+			txtEmail.BackColor = Color.FromArgb(240, 248, 255);
+		}
+
+		private void TxtEmail_Leave(object sender, EventArgs e)
+		{
+			txtEmail.BackColor = Color.White;
+			ValidateEmail();
+		}
+
+		private void TxtUsername_Enter(object sender, EventArgs e)
+		{
+			txtUsername.BackColor = Color.FromArgb(240, 248, 255); // Light blue
+		}
+
+		private void RegistrationForm_SizeChanged(object sender, EventArgs e)
+		{
+			if (this.IsHandleCreated && panelMain != null)
+			{
+				CenterControls();
+			}
+		}
+
+		private void CenterControls()
+		{
+			try
+			{
+				if (panelMain == null || lblTitle == null)
+					return;
+
+				// Центрируем заголовок
+				lblTitle.Left = (panelMain.Width - lblTitle.Width) / 2;
+
+				// Центрируем панель формы
+				var formPanel = panelMain.Controls.OfType<Panel>()
+					.FirstOrDefault(p => p.BackColor == Color.White);
+				if (formPanel != null)
+				{
+					formPanel.Left = (panelMain.Width - formPanel.Width) / 2;
+					formPanel.Top = (panelMain.Height - formPanel.Height) / 2;
+				}
+
+				// Обновляем позиции кнопок выхода и сворачивания
+				var exitButton = panelMain.Controls.OfType<Button>()
+					.FirstOrDefault(b => b.Text == "✕");
+				if (exitButton != null)
+				{
+					exitButton.Left = panelMain.Width - 50;
+				}
+
+				var minimizeButton = panelMain.Controls.OfType<Button>()
+					.FirstOrDefault(b => b.Text == "─");
+				if (minimizeButton != null)
+				{
+					minimizeButton.Left = panelMain.Width - 90;
+				}
+			}
+			catch (Exception ex)
+			{
+				System.Diagnostics.Debug.WriteLine($"CenterControls error: {ex.Message}");
+			}
+		}
+		#endregion
+
 		private async void BtnGetCode_Click(object sender, EventArgs e)
 		{
 			try
@@ -274,14 +286,6 @@ namespace DesktopClient
 			}
 		}
 
-		private void BtnBack_Click(object sender, EventArgs e)
-		{
-			// Возврат к WelcomeForm
-			var welcomeForm = new WelcomeForm();
-			welcomeForm.Show();
-			this.Hide();
-		}
-
 		protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
 		{
 			if (keyData == Keys.Escape)
@@ -291,11 +295,5 @@ namespace DesktopClient
 			}
 			return base.ProcessCmdKey(ref msg, keyData);
 		}
-	}
-
-	public enum VerificationType
-	{
-		Registration,
-		Login
 	}
 }

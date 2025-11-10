@@ -21,6 +21,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthServerAPI", "AuthServerAPI\AuthServerAPI.csproj", "{8722C5DD-0B35-4ADC-93CB-46445F6E3120}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesktopClient", "DesktopClient\DesktopClient.csproj", "{24AAAB04-0174-4B68-B017-90C59EC598A2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8722C5DD-0B35-4ADC-93CB-46445F6E3120} = {8722C5DD-0B35-4ADC-93CB-46445F6E3120}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,4 +1,4 @@
-﻿namespace AuthServerAPI.Requests
+﻿namespace Requests.Requests
 {
 	public class EmailCheckRequest
 	{

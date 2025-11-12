@@ -1,9 +1,9 @@
 ﻿using AuthServerAPI.Logic;
 using AuthServerAPI.Logic.Interfaces;
 using AuthServerAPI.Models;
-using AuthServerAPI.Requests;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Requests.Requests;
 
 namespace AuthServerAPI.Controllers
 {

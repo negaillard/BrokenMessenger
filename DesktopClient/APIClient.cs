@@ -26,7 +26,7 @@ namespace DesktopClient
 		{
 			_sessionToken = token;
 			UpdateAuthHeader();
-			SecureStorage.SaveSessionToken();
+			SecureStorage.SaveSessionToken(token);
 		}
 
 		public void ClearSession()
@@ -38,6 +38,7 @@ namespace DesktopClient
 
 		private void UpdateAuthHeader()
 		{
+			_httpClient.DefaultRequestHeaders.Authorization = null;
 			if (!string.IsNullOrEmpty(_sessionToken))
 			{
 				_httpClient.DefaultRequestHeaders.Authorization =

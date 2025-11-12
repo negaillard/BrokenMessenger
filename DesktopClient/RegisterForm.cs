@@ -21,7 +21,7 @@ namespace DesktopClient
 			CenterControls();
 		}
 
-		#region валидация
+		#region Валидация
 		// Валидация имени пользователя
 		private void TxtUsername_TextChanged(object sender, EventArgs e)
 		{
@@ -107,6 +107,15 @@ namespace DesktopClient
 		#endregion
 
 		#region для визуала
+		protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+		{
+			if (keyData == Keys.Escape)
+			{
+				BtnBack_Click(null, null);
+				return true;
+			}
+			return base.ProcessCmdKey(ref msg, keyData);
+		}
 		private void ShowUsernameError(string message)
 		{
 			lblUsernameError.Text = message;
@@ -286,14 +295,6 @@ namespace DesktopClient
 			}
 		}
 
-		protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
-		{
-			if (keyData == Keys.Escape)
-			{
-				BtnBack_Click(null, null);
-				return true;
-			}
-			return base.ProcessCmdKey(ref msg, keyData);
-		}
+		
 	}
 }

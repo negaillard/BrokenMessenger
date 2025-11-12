@@ -21,7 +21,24 @@ namespace DesktopClient
 			// Теперь все элементы гарантированно созданы
 			CenterControls();
 		}
-
+		#region Для визуала
+		protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+		{
+			if (keyData == Keys.Escape)
+			{
+				Application.Exit();
+				return true;
+			}
+			return base.ProcessCmdKey(ref msg, keyData);
+		}
+		protected override void OnFormClosing(FormClosingEventArgs e)
+		{
+			if (e.CloseReason == CloseReason.UserClosing)
+			{
+				Application.Exit();
+			}
+			base.OnFormClosing(e);
+		}
 		private void WelcomeForm_SizeChanged(object sender, EventArgs e)
 		{
 			// Проверяем что форма уже загружена и элементы созданы
@@ -79,6 +96,7 @@ namespace DesktopClient
 				System.Diagnostics.Debug.WriteLine($"CenterControls error: {ex.Message}");
 			}
 		}
+		#endregion
 
 		private void BtnLogin_Click(object sender, EventArgs e)
 		{
@@ -94,25 +112,6 @@ namespace DesktopClient
 			var registerForm = new RegisterForm();
 			registerForm.Show();
 			this.Hide();
-		}
-
-		protected override void OnFormClosing(FormClosingEventArgs e)
-		{
-			if (e.CloseReason == CloseReason.UserClosing)
-			{
-				Application.Exit();
-			}
-			base.OnFormClosing(e);
-		}
-
-		protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
-		{
-			if (keyData == Keys.Escape)
-			{
-				Application.Exit();
-				return true;
-			}
-			return base.ProcessCmdKey(ref msg, keyData);
 		}
 	}
 }

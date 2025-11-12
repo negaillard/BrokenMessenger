@@ -21,6 +21,62 @@ namespace DesktopClient
 			CenterControls();
 		}
 
+		#region Валидация
+		// Валидация имени пользователя
+		private void TxtUsername_TextChanged(object sender, EventArgs e)
+		{
+			ValidateUsername();
+			UpdateGetCodeButton();
+		}
+
+		private void ValidateUsername()
+		{
+			var username = txtUsername.Text.Trim();
+
+			if (string.IsNullOrEmpty(username))
+			{
+				ShowUsernameError("Введите имя пользователя");
+				return;
+			}
+
+			if (username.Length < 3)
+			{
+				ShowUsernameError("Минимум 3 символа");
+				return;
+			}
+
+			if (username.Length > 20)
+			{
+				ShowUsernameError("Максимум 20 символов");
+				return;
+			}
+
+			if (!Regex.IsMatch(username, @"^[a-zA-Z0-9_]+$"))
+			{
+				ShowUsernameError("Только буквы, цифры и подчеркивание");
+				return;
+			}
+
+			HideUsernameError();
+		}
+
+		private void TxtUsername_Leave(object sender, EventArgs e)
+		{
+			txtUsername.BackColor = Color.White;
+			ValidateUsername();
+		}
+		#endregion
+
+		#region Для визуала
+		protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+		{
+			if (keyData == Keys.Escape)
+			{
+				BtnBack_Click(null, null);
+				return true;
+			}
+			return base.ProcessCmdKey(ref msg, keyData);
+		}
 		private void LoginForm_SizeChanged(object sender, EventArgs e)
 		{
 			if (this.IsHandleCreated && panelMain != null)
@@ -28,7 +84,6 @@ namespace DesktopClient
 				CenterControls();
 			}
 		}
-
 		private void CenterControls()
 		{
 			try
@@ -68,66 +123,6 @@ namespace DesktopClient
 				System.Diagnostics.Debug.WriteLine($"CenterControls error: {ex.Message}");
 			}
 		}
-
-		// Валидация имени пользователя
-		private void TxtUsername_TextChanged(object sender, EventArgs e)
-		{
-			ValidateUsername();
-			UpdateGetCodeButton();
-		}
-
-		private void TxtUsername_Enter(object sender, EventArgs e)
-		{
-			txtUsername.BackColor = Color.FromArgb(240, 248, 255);
-		}
-
-		private void TxtUsername_Leave(object sender, EventArgs e)
-		{
-			txtUsername.BackColor = Color.White;
-			ValidateUsername();
-		}
-
-		private void TxtUsername_KeyDown(object sender, KeyEventArgs e)
-		{
-			if (e.KeyCode == Keys.Enter && btnGetCode.Enabled)
-			{
-				BtnGetCode_Click(sender, e);
-				e.Handled = true;
-				e.SuppressKeyPress = true;
-			}
-		}
-
-		private void ValidateUsername()
-		{
-			var username = txtUsername.Text.Trim();
-
-			if (string.IsNullOrEmpty(username))
-			{
-				ShowUsernameError("Введите имя пользователя");
-				return;
-			}
-
-			if (username.Length < 3)
-			{
-				ShowUsernameError("Минимум 3 символа");
-				return;
-			}
-
-			if (username.Length > 20)
-			{
-				ShowUsernameError("Максимум 20 символов");
-				return;
-			}
-
-			if (!Regex.IsMatch(username, @"^[a-zA-Z0-9_]+$"))
-			{
-				ShowUsernameError("Только буквы, цифры и подчеркивание");
-				return;
-			}
-
-			HideUsernameError();
-		}
-
 		private void ShowUsernameError(string message)
 		{
 			lblUsernameError.Text = message;
@@ -135,25 +130,21 @@ namespace DesktopClient
 			txtUsername.BorderStyle = BorderStyle.FixedSingle;
 			txtUsername.BackColor = Color.FromArgb(255, 240, 240);
 		}
-
 		private void HideUsernameError()
 		{
 			lblUsernameError.Visible = false;
 			txtUsername.BorderStyle = BorderStyle.FixedSingle;
 			txtUsername.BackColor = Color.White;
 		}
-
 		private void ShowError(string message)
 		{
 			lblError.Text = message;
 			lblError.Visible = true;
 		}
-
 		private void HideError()
 		{
 			lblError.Visible = false;
 		}
-
 		private void UpdateGetCodeButton()
 		{
 			var username = txtUsername.Text.Trim();
@@ -177,6 +168,27 @@ namespace DesktopClient
 				btnGetCode.Cursor = Cursors.Default;
 			}
 		}
+		private void TxtUsername_Enter(object sender, EventArgs e)
+		{
+			txtUsername.BackColor = Color.FromArgb(240, 248, 255);
+		}
+		private void TxtUsername_KeyDown(object sender, KeyEventArgs e)
+		{
+			if (e.KeyCode == Keys.Enter && btnGetCode.Enabled)
+			{
+				BtnGetCode_Click(sender, e);
+				e.Handled = true;
+				e.SuppressKeyPress = true;
+			}
+		}
+		private void BtnBack_Click(object sender, EventArgs e)
+		{
+			// Возврат к WelcomeForm
+			var welcomeForm = new WelcomeForm();
+			welcomeForm.Show();
+			this.Hide();
+		}
+		#endregion
 
 		private async void BtnGetCode_Click(object sender, EventArgs e)
 		{
@@ -218,22 +230,8 @@ namespace DesktopClient
 			}
 		}
 
-		private void BtnBack_Click(object sender, EventArgs e)
-		{
-			// Возврат к WelcomeForm
-			var welcomeForm = new WelcomeForm();
-			welcomeForm.Show();
-			this.Hide();
-		}
+		
 
-		protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
-		{
-			if (keyData == Keys.Escape)
-			{
-				BtnBack_Click(null, null);
-				return true;
-			}
-			return base.ProcessCmdKey(ref msg, keyData);
-		}
+		
 	}
 }

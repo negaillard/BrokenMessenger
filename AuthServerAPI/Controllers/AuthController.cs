@@ -4,6 +4,7 @@ using AuthServerAPI.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Requests.Requests;
+using Requests.Responses;
 
 namespace AuthServerAPI.Controllers
 {
@@ -57,7 +58,7 @@ namespace AuthServerAPI.Controllers
 				}
 
 				_logger.LogInformation($"Код регистрации отправлен на: {request.Email}");
-				return Ok(new {message  = result.message});
+				return Ok(new RegistrationResponse{Message  = result.message});
 			}
 			catch (Exception ex)
 			{
@@ -96,10 +97,10 @@ namespace AuthServerAPI.Controllers
 				}
 
 				_logger.LogInformation($"Пользователь создан: {request.Username}");
-				return Ok(new
+				return Ok(new VerifyRegistrationResponse
 				{
-					message = "Регистрация успешно завершена",
-					username = request.Username
+					Message = "Регистрация успешно завершена",
+					Username = request.Username
 				});
 			}
 			catch (Exception ex) 
@@ -135,7 +136,7 @@ namespace AuthServerAPI.Controllers
 				}
 
 				_logger.LogInformation($"Код входа отправлен на: {usernameCheck.Email}");
-				return Ok(new { message = result.message });
+				return Ok(new LoginResponse{ Message = result.message });
 			}
 			catch (Exception ex)
 			{
@@ -170,13 +171,13 @@ namespace AuthServerAPI.Controllers
 
 				_logger.LogInformation($"Успешный вход: {request.Username}, session: {sessionId}");
 
-				return Ok(new
+				return Ok(new VerifyLoginResponse
 				{
-					message = "Вход выполнен успешно",
-					username = user.Username,
-					userId = user.Id,
-					sessionToken = sessionId, 
-					expiresAt = DateTime.UtcNow.AddHours(24)
+					Message = "Вход выполнен успешно",
+					Username = user.Username,
+					UserId = user.Id,
+					SessionToken = sessionId, 
+					ExpiresAt = DateTime.UtcNow.AddHours(24)
 				});
 			}
 			catch (Exception ex)
@@ -230,10 +231,10 @@ namespace AuthServerAPI.Controllers
 					});
 				}
 
-				return Ok(new
+				return Ok(new UsernameCheckResponse
 				{
-					available = true,
-					message = "Username доступен"
+					Available = true,
+					Message = "Username доступен"
 				});
 			}
 			catch (Exception ex)
@@ -265,10 +266,10 @@ namespace AuthServerAPI.Controllers
 					});
 				}
 
-				return Ok(new
+				return Ok(new EmailCheckResponse
 				{
-					available = true,
-					message = "Email доступен"
+					Available = true,
+					Message = "Email доступен"
 				});
 			}
 			catch (Exception ex)

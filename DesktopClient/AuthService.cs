@@ -47,6 +47,46 @@ namespace DesktopClient
 			}
 		}
 
+		public async Task<(bool success, string message)> SendRegistrationCodeAsync(string username, string email)
+		{
+			try
+			{
+				var result = await _apiClient.PostAnonymousAsync<ApiResult<string>>(
+					"/api/auth/send-registration-code",
+					new RegistrationRequest { Username = username, Email = email }
+					);
+
+				return (result?.Success == true, result?.Message ?? "Ошибка отправки кода");
+			}
+
+			catch (Exception ex)
+			{
+				return (false, $"Ошибка: {ex.Message}");
+			}
+		}
+
+		public async Task<(bool success, string message, LoginResponse data)> VerifyRegistartionAsync(string username, string email, string code)
+		{
+			try
+			{
+				var result = await _apiClient.PostAnonymousAsync<ApiResult<LoginResponse>>(
+					"/api/auth/verify-registration",
+					new VerifyRegistrationRequest { Username = username, Email = email, Code = code });
+
+				if (result?.Success == true && result.Data != null)
+				{
+					_apiClient.SetSessionToken(result.Data.SessionToken);
+					return (true, result?.Message, result.Data);
+				}
+
+				return (false, result?.Message ?? "Ошибка входа", null);
+			}
+			catch (Exception ex)
+			{
+				return (false, $"Ошибка: {ex.Message}", null);
+			}
+		}
+
 		public async Task<(bool success,string message)> SendLoginCodeAsync(string username)
 		{
 			try
@@ -85,45 +125,7 @@ namespace DesktopClient
 			}
 		}
 
-		public async Task<(bool success, string message)> SendRegistrationCodeAsync(string username, string email)
-		{
-			try
-			{
-				var result = await _apiClient.PostAnonymousAsync<ApiResult<string>>(
-					"/api/auth/send-registration-code",
-					new RegistrationRequest{ Username =username, Email = email}
-					);
-
-				return (result?.Success == true, result?.Message ?? "Ошибка отправки кода");
-			}
-
-			catch (Exception ex)
-			{
-				return (false, $"Ошибка: {ex.Message}");
-			}
-		}
-
-		public async Task<(bool success, string message, LoginResponse data)> VerifyRegistartionAsync(string username, string email, string code)
-		{
-			try
-			{
-				var result = await _apiClient.PostAnonymousAsync<ApiResult<LoginResponse>>(
-					"/api/auth/verify-registration",
-					new VerifyRegistrationRequest { Username = username, Email = email, Code = code });
-
-				if (result?.Success == true && result.Data != null)
-				{
-					_apiClient.SetSessionToken(result.Data.SessionToken);
-					return (true, result?.Message, result.Data);
-				}
-
-				return (false, result?.Message ?? "Ошибка входа", null);
-			}
-			catch (Exception ex)
-			{
-				return (false, $"Ошибка: {ex.Message}", null);
-			}
-		}
+		
 
 		public async Task LogoutAsync(string token)
 		{

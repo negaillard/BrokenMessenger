@@ -12,7 +12,7 @@ namespace DesktopClient
 		private string _sessionToken;
 
 
-		public APIClient(string baseUrl = "https://localhost:5000")
+		public APIClient(string baseUrl = "http://localhost:8080")
 		{
 			_baseUrl = baseUrl;
 			_httpClient = new HttpClient();

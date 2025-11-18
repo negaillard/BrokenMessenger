@@ -8,8 +8,12 @@ namespace DesktopClient
 {
 	public partial class RegisterForm : Form
 	{
+		private readonly AuthService _authService;
 		public RegisterForm()
 		{
+			var apiClient = new APIClient();
+			_authService = new AuthService(apiClient);
+
 			InitializeComponent();
 
 			this.Load += RegistrationForm_Load;
@@ -269,14 +273,16 @@ namespace DesktopClient
 				var username = txtUsername.Text.Trim();
 				var email = txtEmail.Text.Trim();
 
-				// TODO: Вызов API для отправки кода
+				
 				var result = await _authService.SendRegistrationCodeAsync(username, email);
-
-				// Имитация API вызова
-				await System.Threading.Tasks.Task.Delay(1000);
+				if (!result.success)
+				{
+					ShowError(result.message);
+					return;
+				}
 
 				// Если успешно - переходим к форме ввода кода
-				
+
 				var codeForm = new CodeVerificationForm(username, email, VerificationType.Registration);
 				codeForm.Show();
 				this.Hide();

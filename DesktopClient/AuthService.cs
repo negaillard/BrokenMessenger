@@ -21,7 +21,7 @@ namespace DesktopClient
 			try
 			{
 				var result = await _apiClient.PostAnonymousAsync<ApiResult<dynamic>>(
-					"/api/auth/checkusername",
+					"/api/auth/check-username",
 					new UsernameCheckRequest{ Username =username });
 
 				return (result?.Success == true, result?.Message ?? "Ошибка проверки username");
@@ -36,7 +36,7 @@ namespace DesktopClient
 			try
 			{
 				var result = await _apiClient.PostAnonymousAsync<ApiResult<dynamic>>(
-					"/api/auth/checkemail",
+					"/api/auth/check-email",
 					new EmailCheckRequest{ Email = email });
 
 				return (result?.Success == true, result?.Message ?? "Ошибка проверки email");
@@ -52,7 +52,7 @@ namespace DesktopClient
 			try
 			{
 				var result = await _apiClient.PostAnonymousAsync<ApiResult<string>>(
-					"/api/auth/sendlogincode",
+					"/api/auth/send-login-code",
 					new LoginRequest{ Username = username });
 
 				return (result?.Success == true, result?.Message ?? "Ошибка отправки кода");
@@ -69,7 +69,7 @@ namespace DesktopClient
 			try
 			{
 				var result = await _apiClient.PostAnonymousAsync<ApiResult<LoginResponse>>(
-					"/api/auth/verifylogin",
+					"/api/auth/verify-login",
 					new VerifyLoginRequest{ Username = username, Code =code });
 
 				if (result?.Success == true && result.Data != null)
@@ -90,7 +90,7 @@ namespace DesktopClient
 			try
 			{
 				var result = await _apiClient.PostAnonymousAsync<ApiResult<string>>(
-					"/api/auth/sendregistrationcode",
+					"/api/auth/send-registration-code",
 					new RegistrationRequest{ Username =username, Email = email}
 					);
 
@@ -108,7 +108,7 @@ namespace DesktopClient
 			try
 			{
 				var result = await _apiClient.PostAnonymousAsync<ApiResult<LoginResponse>>(
-					"/api/auth/verifyregistration",
+					"/api/auth/verify-registration",
 					new VerifyRegistrationRequest { Username = username, Email = email, Code = code });
 
 				if (result?.Success == true && result.Data != null)
@@ -150,7 +150,7 @@ namespace DesktopClient
 		{
 			try
 			{
-				var result = await _apiClient.GetAsync<ApiResult<bool>>("/api/auth/validatesession");
+				var result = await _apiClient.GetAsync<ApiResult<bool>>("/api/auth/validate-session");
 				return result?.Success == true && result.Data;
 			}
 			catch

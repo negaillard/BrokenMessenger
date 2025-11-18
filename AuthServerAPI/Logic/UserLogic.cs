@@ -9,11 +9,10 @@ namespace AuthServerAPI.Logic
 		private readonly ILogger _logger;
 		private readonly IUserStorage _userStorage;
 		public UserLogic(
-			ILogger<UserLogic> logger,
-			string username)
+			ILogger<UserLogic> logger, IUserStorage userStorage)
 		{
 			_logger = logger;
-			_userStorage = new UserStorage();
+			_userStorage = userStorage;
 		}
 
 		public async Task<List<UserBindingModel>?> ReadListAsync(UserSearchModel? model)

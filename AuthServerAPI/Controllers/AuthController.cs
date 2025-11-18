@@ -28,7 +28,7 @@ namespace AuthServerAPI.Controllers
 			_logger = logger;
 		}
 
-		[HttpPost]
+		[HttpPost("send-registration-code")]
 		public async Task<IActionResult> SendRegistrationCode([FromBody] RegistrationRequest request)
 		{
 			try
@@ -62,11 +62,11 @@ namespace AuthServerAPI.Controllers
 			catch (Exception ex)
 			{
 				_logger.LogError(ex, "Ошибка при отправке кода регистрации");
-				return BadRequest(new { error = "Ошибка сервера" });
+				return BadRequest(new { error = ex.Message });
 			}
 		}
 
-		[HttpPost]
+		[HttpPost("verify-registration")]
 		public async Task<IActionResult> VerifyRegistration([FromBody] VerifyRegistrationRequest request )
 		{
 			try
@@ -109,7 +109,7 @@ namespace AuthServerAPI.Controllers
 			}
 		}
 
-		[HttpPost]
+		[HttpPost("send-login-code")]
 		public async Task<IActionResult> SendLoginCode([FromBody] LoginRequest request)
 		{
 			try
@@ -144,7 +144,7 @@ namespace AuthServerAPI.Controllers
 			}
 		}
 
-		[HttpPost]
+		[HttpPost("verify-login")]
 		public async Task<IActionResult> VerifyLogin([FromBody] VerifyLoginRequest request)
 		{
 			try
@@ -186,14 +186,14 @@ namespace AuthServerAPI.Controllers
 			}
 		}
 
-		[HttpPost]
+		[HttpPost("logout")]
 		public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
 		{
 			await _sessionService.DeleteSessionAsync(request.SessionToken);
 			return Ok(new { message = "Выход выполнен" });
 		}
 
-		[HttpGet]
+		[HttpGet("validate-session")]
 		public async Task<IActionResult> ValidateSession([FromHeader] string authorization)
 		{
 			var sessionId = authorization?.Replace("Bearer ", "");
@@ -209,7 +209,7 @@ namespace AuthServerAPI.Controllers
 
 		#region Нахуй не нужны
 		// Проверка доступности username
-		[HttpPost]
+		[HttpPost("check-username")]
 		public async Task<IActionResult> CheckUsername([FromBody] UsernameCheckRequest request)
 		{
 			try
@@ -244,7 +244,7 @@ namespace AuthServerAPI.Controllers
 		}
 
 		// Проверка доступности email
-		[HttpPost]
+		[HttpPost("check-email")]
 		public async Task<IActionResult> CheckEmail([FromBody] EmailCheckRequest request)
 		{
 			try

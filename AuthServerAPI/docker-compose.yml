@@ -1,0 +1,38 @@
+﻿services:
+  db:
+    restart: always
+    image: "mcr.microsoft.com/mssql/server:2019-latest"
+    environment:
+      SA_PASSWORD: "simplepassword123$"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1435:1433"
+    volumes:
+      - db_data:/var/opt/mssql  
+
+  api:
+    build:
+      context: ..  
+      dockerfile: AuthServerAPI/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      #ConnectionStrings__DefaultConnection: "Server=db;Database=AuthServer;User Id=api_user;Password=password;TrustServerCertificate=True;"
+      ASPNETCORE_ENVIRONMENT: "Development"
+    depends_on:
+      - db
+      - redis
+   
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes 
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+
+volumes:
+  db_data:
+  redis_data:  

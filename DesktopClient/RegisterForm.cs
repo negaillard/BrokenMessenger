@@ -270,7 +270,7 @@ namespace DesktopClient
 				var email = txtEmail.Text.Trim();
 
 				// TODO: Вызов API для отправки кода
-				// var result = await _authService.SendRegistrationCodeAsync(username, email);
+				var result = await _authService.SendRegistrationCodeAsync(username, email);
 
 				// Имитация API вызова
 				await System.Threading.Tasks.Task.Delay(1000);

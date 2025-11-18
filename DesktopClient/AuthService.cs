@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Requests.Requests;
+using Requests.Responses;
 
 namespace DesktopClient
 {
@@ -20,11 +21,11 @@ namespace DesktopClient
 		{
 			try
 			{
-				var result = await _apiClient.PostAnonymousAsync<ApiResult<dynamic>>(
+				var result = await _apiClient.PostAnonymousAsync<UsernameCheckResponse>(
 					"/api/auth/check-username",
 					new UsernameCheckRequest{ Username =username });
 
-				return (result?.Success == true, result?.Message ?? "Ошибка проверки username");
+				return (true, result?.Message ?? "Логин свободен");
 			}
 			catch (Exception ex) {
 				return (false, $"Ошибка: {ex.Message}");
@@ -35,11 +36,11 @@ namespace DesktopClient
 		{
 			try
 			{
-				var result = await _apiClient.PostAnonymousAsync<ApiResult<dynamic>>(
+				var result = await _apiClient.PostAnonymousAsync<EmailCheckResponse>(
 					"/api/auth/check-email",
 					new EmailCheckRequest{ Email = email });
 
-				return (result?.Success == true, result?.Message ?? "Ошибка проверки email");
+				return (true, result?.Message ?? "Email свободен");
 			}
 			catch (Exception ex)
 			{
@@ -51,12 +52,12 @@ namespace DesktopClient
 		{
 			try
 			{
-				var result = await _apiClient.PostAnonymousAsync<ApiResult<string>>(
+				var result = await _apiClient.PostAnonymousAsync<RegistrationResponse>(
 					"/api/auth/send-registration-code",
 					new RegistrationRequest { Username = username, Email = email }
 					);
 
-				return (result?.Success == true, result?.Message ?? "Ошибка отправки кода");
+				return (true, result.Message);
 			}
 
 			catch (Exception ex)
@@ -65,25 +66,19 @@ namespace DesktopClient
 			}
 		}
 
-		public async Task<(bool success, string message, LoginResponse data)> VerifyRegistartionAsync(string username, string email, string code)
+		public async Task<(bool success, string message)> VerifyRegistrationAsync(string username, string email, string code)
 		{
 			try
 			{
-				var result = await _apiClient.PostAnonymousAsync<ApiResult<LoginResponse>>(
+				var result = await _apiClient.PostAnonymousAsync<VerifyRegistrationResponse>(
 					"/api/auth/verify-registration",
 					new VerifyRegistrationRequest { Username = username, Email = email, Code = code });
 
-				if (result?.Success == true && result.Data != null)
-				{
-					_apiClient.SetSessionToken(result.Data.SessionToken);
-					return (true, result?.Message, result.Data);
-				}
-
-				return (false, result?.Message ?? "Ошибка входа", null);
+				return (true, result.Message);
 			}
 			catch (Exception ex)
 			{
-				return (false, $"Ошибка: {ex.Message}", null);
+				return (false, $"Ошибка: {ex.Message}");
 			}
 		}
 
@@ -91,11 +86,11 @@ namespace DesktopClient
 		{
 			try
 			{
-				var result = await _apiClient.PostAnonymousAsync<ApiResult<string>>(
+				var result = await _apiClient.PostAnonymousAsync<LoginResponse>(
 					"/api/auth/send-login-code",
 					new LoginRequest{ Username = username });
 
-				return (result?.Success == true, result?.Message ?? "Ошибка отправки кода");
+				return (true, result.Message);
 			}
 
 			catch (Exception ex)
@@ -104,34 +99,34 @@ namespace DesktopClient
 			}
 		}
 
-		public async Task<(bool success, string message, LoginResponse data)> VerifyLoginAsync(string username, string code)
+		public async Task<(bool success, string message, VerifyLoginResponse response)> VerifyLoginAsync(string username, string code)
 		{
 			try
 			{
-				var result = await _apiClient.PostAnonymousAsync<ApiResult<LoginResponse>>(
+				var result = await _apiClient.PostAnonymousAsync<VerifyLoginResponse>(
 					"/api/auth/verify-login",
 					new VerifyLoginRequest{ Username = username, Code =code });
 
-				if (result?.Success == true && result.Data != null)
+				if (result?.UserId != null &&
+					!string.IsNullOrEmpty(result.Username) && 
+					!string.IsNullOrEmpty(result.SessionToken))
 				{
-					_apiClient.SetSessionToken(result.Data.SessionToken);
-					return (true, result?.Message, result.Data);
+					_apiClient.SetSessionToken(result.SessionToken);
+					return (true, result.Message, result);
 				}
-
-				return (false, result?.Message ?? "Ошибка входа", null);
+				
+				return (false, result.Message, null);
 			}
 			catch (Exception ex) {
 				return (false, $"Ошибка: {ex.Message}", null);
 			}
 		}
 
-		
-
 		public async Task LogoutAsync(string token)
 		{
 			try
 			{
-				await _apiClient.PostAsync<ApiResult<bool>>("/api/auth/logout", new LogoutRequest { SessionToken = token});
+				await _apiClient.PostAsync<LogoutResponse>("/api/auth/logout", new LogoutRequest { SessionToken = token});
 			}
 			catch
 			{
@@ -152,28 +147,13 @@ namespace DesktopClient
 		{
 			try
 			{
-				var result = await _apiClient.GetAsync<ApiResult<bool>>("/api/auth/validate-session");
-				return result?.Success == true && result.Data;
+				var result = await _apiClient.GetAsync<ValidateSessionResponse>("/api/auth/validate-session");
+				return result.IsValid;
 			}
-			catch
+			catch(Exception ex) 
 			{
 				return false;
 			}
 		}
-	}
-
-	public class ApiResult<T>
-	{
-		public bool Success { get; set; }
-		public string Message { get; set; }
-		public T Data { get; set; }
-	}
-
-	public class LoginResponse
-	{
-		public string SessionToken { get; set; }
-		public string Username { get; set; }
-		public int UserId { get; set; }
-		public DateTime ExpiresAt { get; set; }
 	}
 }

@@ -10,23 +10,30 @@ namespace DesktopClient
 		///  The main entry point for the application.
 		/// </summary>
 		[STAThread]
-		static void Main()
+		static async Task Main()
 		{
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
 			Application.Run(new WelcomeForm());
 
-			//// Создаем APIClient (автоматически загрузит сохраненный токен)
+			// РАБОЧАЯ ТЕМА
 			//ApiClient = new APIClient();
+			//AuthService = new AuthService(ApiClient);
 
-			//// Проверяем есть ли токен и он валидный
-			//if (SecureStorage.HasSessionToken())
+			//if (!AuthService.IsAuthenticated())
 			//{
-			//	// TODO: Можно добавить проверку валидности токена на сервере
+			//	Application.Run(new WelcomeForm());
+			//}
+
+			//bool isValid = await AuthService.ValidateSessionAsync();
+
+			//if (isValid)
+			//{
 			//	Application.Run(new MainChatForm());
 			//}
 			//else
 			//{
+			//	ApiClient.ClearSession();
 			//	Application.Run(new WelcomeForm());
 			//}
 		}

@@ -176,8 +176,7 @@ namespace AuthServerAPI.Controllers
 					Message = "Вход выполнен успешно",
 					Username = user.Username,
 					UserId = user.Id,
-					SessionToken = sessionId, 
-					ExpiresAt = DateTime.UtcNow.AddHours(24)
+					SessionToken = sessionId,
 				});
 			}
 			catch (Exception ex)
@@ -191,7 +190,7 @@ namespace AuthServerAPI.Controllers
 		public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
 		{
 			await _sessionService.DeleteSessionAsync(request.SessionToken);
-			return Ok(new { message = "Выход выполнен" });
+			return Ok(new LogoutResponse{ Message = "Выход выполнен" });
 		}
 
 		[HttpGet("validate-session")]
@@ -205,7 +204,7 @@ namespace AuthServerAPI.Controllers
 			if (!isValid)
 				return Unauthorized();
 
-			return Ok(new { valid = true });
+			return Ok(new ValidateSessionResponse{ IsValid = true });
 		}
 
 		#region Нахуй не нужны

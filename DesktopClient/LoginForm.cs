@@ -3,13 +3,18 @@ using System.Drawing;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ListView;
 
 namespace DesktopClient
 {
 	public partial class LoginForm : Form
 	{
+		private readonly AuthService _authService;
 		public LoginForm()
 		{
+			var apiClient = new APIClient();
+			_authService = new AuthService(apiClient);
+
 			InitializeComponent();
 
 			this.Load += LoginForm_Load;
@@ -183,10 +188,7 @@ namespace DesktopClient
 		}
 		private void BtnBack_Click(object sender, EventArgs e)
 		{
-			// Возврат к WelcomeForm
-			var welcomeForm = new WelcomeForm();
-			welcomeForm.Show();
-			this.Hide();
+			Program.ShowWelcomeForm();
 		}
 		#endregion
 
@@ -201,20 +203,16 @@ namespace DesktopClient
 
 				var username = txtUsername.Text.Trim();
 
-				// TODO: Вызов API для проверки пользователя и отправки кода
-				// var userExists = await _authService.CheckUserExistsAsync(username);
-				// if (!userExists) { ShowError("Пользователь не найден"); return; }
-
-				// var result = await _authService.SendLoginCodeAsync(username);
-
-				// Имитация API вызова
-				await System.Threading.Tasks.Task.Delay(1000);
+				var result = await _authService.SendLoginCodeAsync(username);
+				if (!result.success)
+				{
+					ShowError(result.message);
+					return;
+				}
 
 				// Если успешно - переходим к форме ввода кода
 
-				var codeForm = new CodeVerificationForm(username, "", VerificationType.Login);
-				codeForm.Show();
-				this.Hide();
+				Program.ShowCodeVerificationForm(username, string.Empty, VerificationType.Login);
 
 				HideError();
 			}
@@ -229,9 +227,5 @@ namespace DesktopClient
 				btnGetCode.BackColor = Color.FromArgb(86, 130, 163);
 			}
 		}
-
-		
-
-		
 	}
 }

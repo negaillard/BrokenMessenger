@@ -2,20 +2,39 @@
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace DesktopClient
 {
 	public partial class CodeVerificationForm : Form
 	{
 		private string _username;
-		private string _email;
+		private string _email = string.Empty;
 		private VerificationType _verificationType;
+		private readonly AuthService _authService;
 
 		public CodeVerificationForm(string username, string email, VerificationType verificationType)
 		{
 			_username = username;
 			_email = email;
 			_verificationType = verificationType;
+
+			var apiClient = new APIClient();
+			_authService = new AuthService(apiClient);
+
+			InitializeComponent();
+
+			this.Load += CodeVerificationForm_Load;
+			this.SizeChanged += CodeVerificationForm_SizeChanged;
+		}
+
+		public CodeVerificationForm(string username, VerificationType verificationType)
+		{
+			_username = username;
+			_verificationType = verificationType;
+
+			var apiClient = new APIClient();
+			_authService = new AuthService(apiClient);
 
 			InitializeComponent();
 
@@ -29,121 +48,7 @@ namespace DesktopClient
 			StartResendTimer();
 			CenterControls();
 		}
-
-		private void CodeVerificationForm_SizeChanged(object sender, EventArgs e)
-		{
-			if (this.IsHandleCreated && panelMain != null)
-			{
-				CenterControls();
-			}
-		}
-
-		private void SetupEmailDisplay()
-		{
-			string maskedEmail = MaskEmail(_email);
-			string actionText = _verificationType == VerificationType.Registration ?
-				"Для завершения регистрации" : "Для входа в аккаунт";
-
-			lblEmailInfo.Text = $"{actionText}\nКод отправлен на почту:\n{maskedEmail}";
-		}
-
-		private string MaskEmail(string email)
-		{
-			if (string.IsNullOrEmpty(email))
-				return "***@***.***";
-
-			try
-			{
-				var parts = email.Split('@');
-				if (parts.Length != 2) return "***@***.***";
-
-				string localPart = parts[0];
-				string domainPart = parts[1];
-
-				// Маскируем local part (первые 3 символа + ***)
-				string maskedLocal = localPart.Length <= 3 ?
-					localPart.Substring(0, 1) + "***" :
-					localPart.Substring(0, 3) + "***";
-
-				// Маскируем domain part
-				var domainParts = domainPart.Split('.');
-				if (domainParts.Length >= 2)
-				{
-					string domainName = domainParts[0];
-					string maskedDomain = domainName.Length <= 3 ?
-						domainName.Substring(0, 1) + "***" :
-						domainName.Substring(0, 3) + "***";
-
-					string extension = string.Join(".", domainParts.Skip(1));
-					return $"{maskedLocal}@{maskedDomain}.{extension}";
-				}
-
-				return $"{maskedLocal}@***.***";
-			}
-			catch
-			{
-				return "***@***.***";
-			}
-		}
-
-		private void CenterControls()
-		{
-			try
-			{
-				if (panelMain == null || lblTitle == null)
-					return;
-
-				// Центрируем заголовок
-				lblTitle.Left = (panelMain.Width - lblTitle.Width) / 2;
-
-				// Центрируем панель формы
-				var formPanel = panelMain.Controls.OfType<Panel>()
-					.FirstOrDefault(p => p.BackColor == Color.White);
-				if (formPanel != null)
-				{
-					formPanel.Left = (panelMain.Width - formPanel.Width) / 2;
-					formPanel.Top = (panelMain.Height - formPanel.Height) / 2;
-				}
-
-				// Центрируем информацию о email
-				if (lblEmailInfo != null)
-				{
-					lblEmailInfo.Left = (formPanel.Width - lblEmailInfo.Width) / 2;
-				}
-			}
-			catch (Exception ex)
-			{
-				System.Diagnostics.Debug.WriteLine($"CenterControls error: {ex.Message}");
-			}
-		}
-
-		// Таймер для обратного отсчета
-		private void StartResendTimer()
-		{
-			secondsRemaining = 120; // 2 минуты
-			UpdateTimerDisplay();
-			resendTimer.Start();
-		}
-
-		private void ResendTimer_Tick(object sender, EventArgs e)
-		{
-			secondsRemaining--;
-			UpdateTimerDisplay();
-
-			if (secondsRemaining <= 0)
-			{
-				resendTimer.Stop();
-				lblTimer.Visible = false;
-				btnResend.Visible = true;
-			}
-		}
-
-		private void UpdateTimerDisplay()
-		{
-			var minutes = secondsRemaining / 60;
-			var seconds = secondsRemaining % 60;
-			lblTimer.Text = $"Повторная отправка через: {minutes}:{seconds:D2}";
-		}
+		#region Валидация
 
 		// Валидация кода
 		private void TxtCode_KeyPress(object sender, KeyPressEventArgs e)
@@ -204,6 +109,99 @@ namespace DesktopClient
 				btnVerify.Cursor = Cursors.Default;
 			}
 		}
+		#endregion
+
+		#region Для визуала
+
+		private void BtnBack_Click(object sender, EventArgs e)
+		{
+			// Возврат к логину/регистрации (они уже в памяти)
+			if (_verificationType == VerificationType.Login)
+			{
+				Program.ShowLoginForm();
+			}
+			else
+			{
+				Program.ShowRegisterForm();
+			}
+			this.Close(); // Эту форму закрываем
+		}
+		private void CodeVerificationForm_SizeChanged(object sender, EventArgs e)
+		{
+			if (this.IsHandleCreated && panelMain != null)
+			{
+				CenterControls();
+			}
+		}
+
+		private string MaskEmail(string email)
+		{
+			if (string.IsNullOrEmpty(email))
+				return "***@***.***";
+
+			try
+			{
+				var parts = email.Split('@');
+				if (parts.Length != 2) return "***@***.***";
+
+				string localPart = parts[0];
+				string domainPart = parts[1];
+
+				// Маскируем local part (первые 3 символа + ***)
+				string maskedLocal = localPart.Length <= 3 ?
+					localPart.Substring(0, 1) + "***" :
+					localPart.Substring(0, 3) + "***";
+
+				// Маскируем domain part
+				var domainParts = domainPart.Split('.');
+				if (domainParts.Length >= 2)
+				{
+					string domainName = domainParts[0];
+					string maskedDomain = domainName.Length <= 3 ?
+						domainName.Substring(0, 1) + "***" :
+						domainName.Substring(0, 3) + "***";
+
+					string extension = string.Join(".", domainParts.Skip(1));
+					return $"{maskedLocal}@{maskedDomain}.{extension}";
+				}
+
+				return $"{maskedLocal}@***.***";
+			}
+			catch
+			{
+				return "***@***.***";
+			}
+		}
+		private void CenterControls()
+			{
+				try
+				{
+					if (panelMain == null || lblTitle == null)
+						return;
+
+					// Центрируем заголовок
+					lblTitle.Left = (panelMain.Width - lblTitle.Width) / 2;
+
+					// Центрируем панель формы
+					var formPanel = panelMain.Controls.OfType<Panel>()
+						.FirstOrDefault(p => p.BackColor == Color.White);
+					if (formPanel != null)
+					{
+						formPanel.Left = (panelMain.Width - formPanel.Width) / 2;
+						formPanel.Top = (panelMain.Height - formPanel.Height) / 2;
+					}
+
+					// Центрируем информацию о email
+					if (lblEmailInfo != null)
+					{
+						lblEmailInfo.Left = (formPanel.Width - lblEmailInfo.Width) / 2;
+					}
+				}
+				catch (Exception ex)
+				{
+					System.Diagnostics.Debug.WriteLine($"CenterControls error: {ex.Message}");
+				}
+			}
 
 		private void ShowError(string message)
 		{
@@ -216,6 +214,56 @@ namespace DesktopClient
 			lblError.Visible = false;
 		}
 
+		protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+		{
+			if (keyData == Keys.Escape)
+			{
+				BtnBack_Click(null, null);
+				return true;
+			}
+			return base.ProcessCmdKey(ref msg, keyData);
+		}
+		#endregion
+
+		#region Таймер
+		// Таймер для обратного отсчета
+		private void StartResendTimer()
+		{
+			secondsRemaining = 120; // 2 минуты
+			UpdateTimerDisplay();
+			resendTimer.Start();
+		}
+
+		private void ResendTimer_Tick(object sender, EventArgs e)
+		{
+			secondsRemaining--;
+			UpdateTimerDisplay();
+
+			if (secondsRemaining <= 0)
+			{
+				resendTimer.Stop();
+				lblTimer.Visible = false;
+				btnResend.Visible = true;
+			}
+		}
+
+		private void UpdateTimerDisplay()
+		{
+			var minutes = secondsRemaining / 60;
+			var seconds = secondsRemaining % 60;
+			lblTimer.Text = $"Повторная отправка через: {minutes}:{seconds:D2}";
+		}
+		#endregion
+
+		private void SetupEmailDisplay()
+		{
+			string maskedEmail = MaskEmail(_email);
+			string actionText = _verificationType == VerificationType.Registration ?
+				"Для завершения регистрации" : "Для входа в аккаунт";
+
+			lblEmailInfo.Text = $"{actionText}\nКод отправлен на почту:\n{maskedEmail}";
+		}
+
 		private async void BtnVerify_Click(object sender, EventArgs e)
 		{
 			try
@@ -226,24 +274,31 @@ namespace DesktopClient
 				btnVerify.BackColor = Color.Gray;
 
 				var code = txtCode.Text.Trim();
-
-				// TODO: Вызов API для проверки кода
-				// var result = await _authService.VerifyCodeAsync(_username, _email, code, _verificationType);
-
-				// Имитация API вызова
-				await System.Threading.Tasks.Task.Delay(1000);
-
-				// Если успешно - переходим к главной форме
 				if (_verificationType == VerificationType.Registration)
 				{
-					// TODO: Создание пользователя и вход
+					var result = await _authService.VerifyRegistrationAsync(_username, _email, code);
+					if (!result.success)
+					{
+						ShowError(result.message);
+						return;
+					}
+					Program.ShowLoginForm();
+					this.Close();
 				}
+				if (_verificationType == VerificationType.Login)
+				{
+					var result = await _authService.VerifyLoginAsync(_username, code);
+					if (!result.success)
+					{
+						ShowError(result.message);
+						return;
+					}
+					// После успешной верификации
+					Program.ShowMainChatForm();
+					this.Close();
 
-				var mainForm = new MainChatForm();
-				mainForm.Show();
-				this.Hide();
-
-				HideError();
+					HideError();
+				}
 			}
 			catch (Exception ex)
 			{
@@ -285,26 +340,6 @@ namespace DesktopClient
 				btnResend.Enabled = true;
 				btnResend.Text = "Отправить код повторно";
 			}
-		}
-
-		private void BtnBack_Click(object sender, EventArgs e)
-		{
-			// Возврат к предыдущей форме
-			Form previousForm = _verificationType == VerificationType.Registration ?
-				new RegisterForm() : new LoginForm();
-
-			previousForm.Show();
-			this.Hide();
-		}
-
-		protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
-		{
-			if (keyData == Keys.Escape)
-			{
-				BtnBack_Click(null, null);
-				return true;
-			}
-			return base.ProcessCmdKey(ref msg, keyData);
 		}
 	}
 }

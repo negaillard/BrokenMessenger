@@ -190,10 +190,7 @@ namespace DesktopClient
 
 		private void BtnBack_Click(object sender, EventArgs e)
 		{
-			// Возврат к WelcomeForm
-			var welcomeForm = new WelcomeForm();
-			welcomeForm.Show();
-			this.Hide();
+			Program.ShowWelcomeForm();
 		}
 
 		private void TxtEmail_Enter(object sender, EventArgs e)
@@ -281,11 +278,7 @@ namespace DesktopClient
 					return;
 				}
 
-				// Если успешно - переходим к форме ввода кода
-
-				var codeForm = new CodeVerificationForm(username, email, VerificationType.Registration);
-				codeForm.Show();
-				this.Hide();
+				Program.ShowCodeVerificationForm(username, email, VerificationType.Registration);
 
 				HideError();
 			}

@@ -31,14 +31,6 @@ namespace DesktopClient
 			}
 			return base.ProcessCmdKey(ref msg, keyData);
 		}
-		protected override void OnFormClosing(FormClosingEventArgs e)
-		{
-			if (e.CloseReason == CloseReason.UserClosing)
-			{
-				Application.Exit();
-			}
-			base.OnFormClosing(e);
-		}
 		private void WelcomeForm_SizeChanged(object sender, EventArgs e)
 		{
 			// Проверяем что форма уже загружена и элементы созданы
@@ -100,18 +92,12 @@ namespace DesktopClient
 
 		private void BtnLogin_Click(object sender, EventArgs e)
 		{
-			// Переход к форме логина
-			var loginForm = new LoginForm();
-			loginForm.Show();
-			this.Hide();
+			Program.ShowLoginForm();
 		}
 
 		private void BtnRegister_Click(object sender, EventArgs e)
 		{
-			// Переход к форме регистрации
-			var registerForm = new RegisterForm();
-			registerForm.Show();
-			this.Hide();
+			Program.ShowRegisterForm();
 		}
 	}
 }

@@ -1,3 +1,4 @@
+using DesktopClient.DesktopClient;
 using System.Windows.Forms;
 
 namespace DesktopClient
@@ -19,14 +20,16 @@ namespace DesktopClient
 			ApiClient = new APIClient();
 			AuthService = new AuthService(ApiClient);
 
-			_welcomeForm = new WelcomeForm();
-			_welcomeForm.FormClosed += (s, e) =>
-			{
-				//  огда закрываетс€ WelcomeForm и это последн€€ форма - выходим
-				if (Application.OpenForms.Count == 0)
-					Application.Exit();
-			};
-			_welcomeForm.Show();
+			ShowMainChatForm();
+			//_welcomeForm = new WelcomeForm();
+			//_welcomeForm.FormClosed += (s, e) =>
+			//{
+			//	//  огда закрываетс€ WelcomeForm и это последн€€ форма - выходим
+			//	if (Application.OpenForms.Count == 0)
+			//		Application.Exit();
+			//};
+			//_welcomeForm.Show();
+
 			//if (!AuthService.IsAuthenticated())
 			//{
 			//	ShowWelcomeForm();
@@ -113,6 +116,5 @@ namespace DesktopClient
 			_loginForm?.Close();
 			_registerForm?.Close();
 		}
-
 	}
 }

@@ -20,34 +20,46 @@ namespace DesktopClient
 			AuthService = new AuthService(ApiClient);
 
 			//ShowWelcomeForm();
-			_welcomeForm = new WelcomeForm();
-			_welcomeForm.FormClosed += (s, e) =>
+
+			if (!AuthService.IsAuthenticated())
 			{
-				_loginForm?.Close();
-				_registerForm?.Close();
+				_welcomeForm = new WelcomeForm();
+				_welcomeForm.FormClosed += (s, e) =>
+				{
+					_loginForm?.Close();
+					_registerForm?.Close();
 
-				// Когда закрывается WelcomeForm и это последняя форма - выходим
-				if (Application.OpenForms.Count == 0)
-					Application.Exit();
-			};
-			_welcomeForm.Show();
+					// Когда закрывается WelcomeForm и это последняя форма - выходим
+					if (Application.OpenForms.Count == 0)
+						Application.Exit();
+				};
+				_welcomeForm.Show();
+			}
+			else
+			{
+				/// почему то в любом случае считается невалидной
+				bool isValid = await AuthService.ValidateSessionAsync();
 
-			//if (!AuthService.IsAuthenticated())
-			//{
-			//	ShowWelcomeForm();
-			//}
+				if (isValid)
+				{
+					ShowMainChatForm();
+				}
+				else
+				{
+					ApiClient.ClearSession();
+					_welcomeForm = new WelcomeForm();
+					_welcomeForm.FormClosed += (s, e) =>
+					{
+						_loginForm?.Close();
+						_registerForm?.Close();
 
-			//bool isValid = await AuthService.ValidateSessionAsync();
-
-			//if (isValid)
-			//{
-			//	ShowMainChatForm();
-			//}
-			//else
-			//{
-			//	ApiClient.ClearSession();
-			//	ShowWelcomeForm();
-			//}
+						// Когда закрывается WelcomeForm и это последняя форма - выходим
+						if (Application.OpenForms.Count == 0)
+							Application.Exit();
+					};
+					_welcomeForm.Show();
+				}
+			}
 
 			Application.Run();
 		}

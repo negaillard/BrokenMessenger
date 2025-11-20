@@ -223,7 +223,7 @@ namespace DesktopClient
 				lblChatName.Location = new Point(15, 18);
 				chatHeaderPanel.Controls.Add(lblChatName);
 
-				// Загружаем сообщения для выбранного чата
+				// Загружаем сообщения для выбранного чата //// ПОМЕНЯТЬ!!!
 				LoadSampleMessages();
 			}
 

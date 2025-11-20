@@ -12,6 +12,11 @@
 		private Label lblError;
 		private Label lblUsernameError;
 		private Label lblEmailError;
+		private Panel formPanel;
+		private Label lblUsername;
+		private Label lblEmail;
+		private Button btnExit;
+		private Button btnMinimize;
 
 		protected override void Dispose(bool disposing)
 		{
@@ -24,26 +29,26 @@
 
 		private void InitializeComponent()
 		{
-			this.components = new System.ComponentModel.Container();
-			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(1200, 800);
-			this.Text = "Secure Chat - Регистрация";
-			this.WindowState = FormWindowState.Maximized;
-			this.FormBorderStyle = FormBorderStyle.None;
-
-			CreateControls();
-		}
-
-		private void CreateControls()
-		{
 			// Основная панель
 			panelMain = new Panel();
+			btnBack = new Button();
+			lblTitle = new Label();
+			formPanel = new Panel();
+			lblUsername = new Label();
+			txtUsername = new TextBox();
+			lblUsernameError = new Label();
+			lblEmail = new Label();
+			txtEmail = new TextBox();
+			lblEmailError = new Label();
+			btnExit = new Button();
+			btnMinimize = new Button();
+
 			panelMain.Dock = DockStyle.Fill;
 			panelMain.BackColor = Color.FromArgb(235, 245, 251);
-			this.Controls.Add(panelMain);
+			Controls.Add(panelMain);
 
 			// Кнопка Назад
-			btnBack = new Button();
+
 			btnBack.Text = "← Назад";
 			btnBack.Font = new Font("Segoe UI", 11, FontStyle.Regular);
 			btnBack.ForeColor = Color.FromArgb(86, 130, 163);
@@ -57,7 +62,7 @@
 			panelMain.Controls.Add(btnBack);
 
 			// Заголовок
-			lblTitle = new Label();
+
 			lblTitle.Text = "Регистрация";
 			lblTitle.Font = new Font("Segoe UI", 24, FontStyle.Bold);
 			lblTitle.ForeColor = Color.FromArgb(86, 130, 163);
@@ -68,7 +73,7 @@
 			panelMain.Controls.Add(lblTitle);
 
 			// Панель формы
-			var formPanel = new Panel();
+
 			formPanel.Size = new Size(400, 350);
 			formPanel.Location = new Point(0, 0); // Временно, потом центрируем
 			formPanel.BackColor = Color.White;
@@ -77,7 +82,7 @@
 			panelMain.Controls.Add(formPanel);
 
 			// Метка для имени пользователя
-			var lblUsername = new Label();
+
 			lblUsername.Text = "Имя пользователя";
 			lblUsername.Font = new Font("Segoe UI", 11, FontStyle.Bold);
 			lblUsername.ForeColor = Color.FromArgb(86, 130, 163);
@@ -86,7 +91,7 @@
 			formPanel.Controls.Add(lblUsername);
 
 			// Поле имени пользователя
-			txtUsername = new TextBox();
+
 			txtUsername.Font = new Font("Segoe UI", 11);
 			txtUsername.Size = new Size(340, 30);
 			txtUsername.Location = new Point(20, 55);
@@ -97,7 +102,7 @@
 			formPanel.Controls.Add(txtUsername);
 
 			// Ошибка имени пользователя
-			lblUsernameError = new Label();
+
 			lblUsernameError.Text = "";
 			lblUsernameError.Font = new Font("Segoe UI", 9, FontStyle.Regular);
 			lblUsernameError.ForeColor = Color.Red;
@@ -107,7 +112,7 @@
 			formPanel.Controls.Add(lblUsernameError);
 
 			// Метка для email
-			var lblEmail = new Label();
+
 			lblEmail.Text = "Email";
 			lblEmail.Font = new Font("Segoe UI", 11, FontStyle.Bold);
 			lblEmail.ForeColor = Color.FromArgb(86, 130, 163);
@@ -116,7 +121,7 @@
 			formPanel.Controls.Add(lblEmail);
 
 			// Поле email
-			txtEmail = new TextBox();
+
 			txtEmail.Font = new Font("Segoe UI", 11);
 			txtEmail.Size = new Size(340, 30);
 			txtEmail.Location = new Point(20, 155);
@@ -127,7 +132,7 @@
 			formPanel.Controls.Add(txtEmail);
 
 			// Ошибка email
-			lblEmailError = new Label();
+
 			lblEmailError.Text = "";
 			lblEmailError.Font = new Font("Segoe UI", 9, FontStyle.Regular);
 			lblEmailError.ForeColor = Color.Red;
@@ -162,33 +167,14 @@
 			lblError.TextAlign = ContentAlignment.MiddleCenter;
 			formPanel.Controls.Add(lblError);
 
-			// Кнопка выхода
-			var btnExit = new Button();
-			btnExit.Text = "✕";
-			btnExit.Font = new Font("Segoe UI", 12, FontStyle.Bold);
-			btnExit.ForeColor = Color.Gray;
-			btnExit.BackColor = Color.Transparent;
-			btnExit.Size = new Size(40, 40);
-			btnExit.Location = new Point(panelMain.Width - 50, 10);
-			btnExit.FlatStyle = FlatStyle.Flat;
-			btnExit.FlatAppearance.BorderSize = 0;
-			btnExit.Cursor = Cursors.Hand;
-			btnExit.Click += (s, e) => Application.Exit();
-			panelMain.Controls.Add(btnExit);
 
-			// Кнопка сворачивания
-			var btnMinimize = new Button();
-			btnMinimize.Text = "─";
-			btnMinimize.Font = new Font("Segoe UI", 12, FontStyle.Bold);
-			btnMinimize.ForeColor = Color.Gray;
-			btnMinimize.BackColor = Color.Transparent;
-			btnMinimize.Size = new Size(40, 40);
-			btnMinimize.Location = new Point(panelMain.Width - 90, 10);
-			btnMinimize.FlatStyle = FlatStyle.Flat;
-			btnMinimize.FlatAppearance.BorderSize = 0;
-			btnMinimize.Cursor = Cursors.Hand;
-			btnMinimize.Click += (s, e) => this.WindowState = FormWindowState.Minimized;
-			panelMain.Controls.Add(btnMinimize);
+			AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+			ClientSize = new System.Drawing.Size(1200, 800);
+			Text = "Мессенджер Олег - Регистрация";
+			WindowState = FormWindowState.Maximized;
+			MaximizeBox = false;
+			MinimizeBox = true; // Оставляем возможность сворачивания
+			ControlBox = true;
 		}
 	}
 }

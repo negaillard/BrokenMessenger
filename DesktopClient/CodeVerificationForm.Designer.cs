@@ -12,6 +12,9 @@
 		private Label lblEmailInfo;
 		private Label lblError;
 		private Label lblTimer;
+		private Panel formPanel;
+		private Label lblCode;
+
 		private System.Windows.Forms.Timer resendTimer;
 		private int secondsRemaining = 120; // 2 минуты
 
@@ -27,26 +30,24 @@
 
 		private void InitializeComponent()
 		{
-			this.components = new System.ComponentModel.Container();
-			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(1200, 800);
-			this.Text = "Secure Chat - Подтверждение кода";
-			this.WindowState = FormWindowState.Maximized;
-			this.FormBorderStyle = FormBorderStyle.None;
-
-			CreateControls();
-		}
-
-		private void CreateControls()
-		{
 			// Основная панель
 			panelMain = new Panel();
+			btnBack = new Button();
+			lblTitle = new Label();
+			formPanel = new Panel();
+			lblEmailInfo = new Label();
+			lblCode = new Label();
+			lblTimer = new Label();
+			lblError = new Label();
+			btnResend = new Button();
+
+
 			panelMain.Dock = DockStyle.Fill;
 			panelMain.BackColor = Color.FromArgb(235, 245, 251);
-			this.Controls.Add(panelMain);
+			Controls.Add(panelMain);
 
 			// Кнопка Назад
-			btnBack = new Button();
+
 			btnBack.Text = "← Назад";
 			btnBack.Font = new Font("Segoe UI", 11, FontStyle.Regular);
 			btnBack.ForeColor = Color.FromArgb(86, 130, 163);
@@ -60,7 +61,7 @@
 			panelMain.Controls.Add(btnBack);
 
 			// Заголовок
-			lblTitle = new Label();
+
 			lblTitle.Text = "Подтверждение кода";
 			lblTitle.Font = new Font("Segoe UI", 24, FontStyle.Bold);
 			lblTitle.ForeColor = Color.FromArgb(86, 130, 163);
@@ -71,7 +72,7 @@
 			panelMain.Controls.Add(lblTitle);
 
 			// Панель формы
-			var formPanel = new Panel();
+
 			formPanel.Size = new Size(400, 350);
 			formPanel.Location = new Point(0, 0);
 			formPanel.BackColor = Color.White;
@@ -80,7 +81,7 @@
 			panelMain.Controls.Add(formPanel);
 
 			// Информация о email
-			lblEmailInfo = new Label();
+
 			lblEmailInfo.Text = "Код отправлен на почту ";
 			lblEmailInfo.Font = new Font("Segoe UI", 11, FontStyle.Regular);
 			lblEmailInfo.ForeColor = Color.Gray;
@@ -90,7 +91,7 @@
 			formPanel.Controls.Add(lblEmailInfo);
 
 			// Метка для кода
-			var lblCode = new Label();
+
 			lblCode.Text = "Код подтверждения";
 			lblCode.Font = new Font("Segoe UI", 11, FontStyle.Bold);
 			lblCode.ForeColor = Color.FromArgb(86, 130, 163);
@@ -129,7 +130,7 @@
 			formPanel.Controls.Add(btnVerify);
 
 			// Таймер повторной отправки
-			lblTimer = new Label();
+
 			lblTimer.Text = "Повторная отправка через: 2:00";
 			lblTimer.Font = new Font("Segoe UI", 10, FontStyle.Regular);
 			lblTimer.ForeColor = Color.Gray;
@@ -139,7 +140,7 @@
 			formPanel.Controls.Add(lblTimer);
 
 			// Кнопка Повторной отправки
-			btnResend = new Button();
+
 			btnResend.Text = "Отправить код повторно";
 			btnResend.Font = new Font("Segoe UI", 10, FontStyle.Regular);
 			btnResend.ForeColor = Color.FromArgb(86, 130, 163);
@@ -154,7 +155,7 @@
 			formPanel.Controls.Add(btnResend);
 
 			// Общая ошибка
-			lblError = new Label();
+
 			lblError.Text = "";
 			lblError.Font = new Font("Segoe UI", 10, FontStyle.Regular);
 			lblError.ForeColor = Color.Red;
@@ -169,35 +170,15 @@
 			resendTimer.Interval = 1000; // 1 секунда
 			resendTimer.Tick += ResendTimer_Tick;
 
-			// Кнопка выхода
-			var btnExit = new Button();
-			btnExit.Text = "✕";
-			btnExit.Font = new Font("Segoe UI", 12, FontStyle.Bold);
-			btnExit.ForeColor = Color.Gray;
-			btnExit.BackColor = Color.Transparent;
-			btnExit.Size = new Size(40, 40);
-			btnExit.Location = new Point(1150, 10);
-			btnExit.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-			btnExit.FlatStyle = FlatStyle.Flat;
-			btnExit.FlatAppearance.BorderSize = 0;
-			btnExit.Cursor = Cursors.Hand;
-			btnExit.Click += (s, e) => Application.Exit();
-			this.Controls.Add(btnExit);
-
-			// Кнопка сворачивания
-			var btnMinimize = new Button();
-			btnMinimize.Text = "─";
-			btnMinimize.Font = new Font("Segoe UI", 12, FontStyle.Bold);
-			btnMinimize.ForeColor = Color.Gray;
-			btnMinimize.BackColor = Color.Transparent;
-			btnMinimize.Size = new Size(40, 40);
-			btnMinimize.Location = new Point(1100, 10);
-			btnMinimize.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-			btnMinimize.FlatStyle = FlatStyle.Flat;
-			btnMinimize.FlatAppearance.BorderSize = 0;
-			btnMinimize.Cursor = Cursors.Hand;
-			btnMinimize.Click += (s, e) => this.WindowState = FormWindowState.Minimized;
-			this.Controls.Add(btnMinimize);
+			
+			AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+			ClientSize = new System.Drawing.Size(1200, 800);
+			Text = "Мессенджер Олег - Подтверждение кода";
+			WindowState = FormWindowState.Maximized;
+			MaximizeBox = false;
+			MinimizeBox = true; // Оставляем возможность сворачивания
+			ControlBox = true;
+			
 		}
 	}
 }

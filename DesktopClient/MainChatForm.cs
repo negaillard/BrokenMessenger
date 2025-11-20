@@ -15,8 +15,6 @@ namespace DesktopClient
 	using System.Linq;
 	using System.Windows.Forms;
 
-	namespace DesktopClient
-	{
 		public partial class MainChatForm : Form
 		{
 			public MainChatForm()
@@ -297,4 +295,3 @@ namespace DesktopClient
 			#endregion
 		}
 	}
-}

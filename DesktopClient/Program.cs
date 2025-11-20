@@ -1,4 +1,3 @@
-using DesktopClient.DesktopClient;
 using System.Windows.Forms;
 
 namespace DesktopClient
@@ -20,15 +19,18 @@ namespace DesktopClient
 			ApiClient = new APIClient();
 			AuthService = new AuthService(ApiClient);
 
-			ShowMainChatForm();
-			//_welcomeForm = new WelcomeForm();
-			//_welcomeForm.FormClosed += (s, e) =>
-			//{
-			//	//  огда закрываетс€ WelcomeForm и это последн€€ форма - выходим
-			//	if (Application.OpenForms.Count == 0)
-			//		Application.Exit();
-			//};
-			//_welcomeForm.Show();
+			//ShowWelcomeForm();
+			_welcomeForm = new WelcomeForm();
+			_welcomeForm.FormClosed += (s, e) =>
+			{
+				_loginForm?.Close();
+				_registerForm?.Close();
+
+				//  огда закрываетс€ WelcomeForm и это последн€€ форма - выходим
+				if (Application.OpenForms.Count == 0)
+					Application.Exit();
+			};
+			_welcomeForm.Show();
 
 			//if (!AuthService.IsAuthenticated())
 			//{
@@ -52,15 +54,10 @@ namespace DesktopClient
 
 		public static void ShowWelcomeForm()
 		{
-			// WelcomeForm всегда создаем заново
-			_welcomeForm?.Close();
-			_welcomeForm = new WelcomeForm();
-			_welcomeForm.FormClosed += (s, e) =>
-			{
-				if (Application.OpenForms.Count == 0)
-					Application.Exit();
-			};
-			_welcomeForm.Show();
+			// ѕоказываем WelcomeForm, скрываем остальные
+			_welcomeForm?.Show();
+			_loginForm?.Hide();
+			_registerForm?.Hide();
 		}
 
 		public static void ShowLoginForm()
@@ -68,10 +65,14 @@ namespace DesktopClient
 			if (_loginForm == null || _loginForm.IsDisposed)
 			{
 				_loginForm = new LoginForm();
+				_loginForm.FormClosed += (s, e) =>
+				{
+					// ѕри закрытии LoginForm провер€ем, не нужно ли завершить приложение
+					if (Application.OpenForms.Count == 0)
+						Application.Exit();
+				};
 			}
 			_loginForm.Show();
-
-			// —крываем welcome (но не закрываем - можем вернутьс€)
 			_welcomeForm?.Hide();
 			_registerForm?.Hide();
 		}
@@ -81,9 +82,14 @@ namespace DesktopClient
 			if (_registerForm == null || _registerForm.IsDisposed)
 			{
 				_registerForm = new RegisterForm();
+				_registerForm.FormClosed += (s, e) =>
+				{
+					// ѕри закрытии RegisterForm провер€ем, не нужно ли завершить приложение
+					if (Application.OpenForms.Count == 0)
+						Application.Exit();
+				};
 			}
 			_registerForm.Show();
-
 			_welcomeForm?.Hide();
 			_loginForm?.Hide();
 		}
@@ -91,16 +97,24 @@ namespace DesktopClient
 		public static void ShowCodeVerificationForm(string username, string email, VerificationType type)
 		{
 			// CodeVerificationForm создаем новую каждый раз
-			if (type == VerificationType.Login) {
-				var verificationForm = new CodeVerificationForm(username,  type);
-				verificationForm.Show();
+			CodeVerificationForm verificationForm;
+			if (type == VerificationType.Login)
+			{
+				verificationForm = new CodeVerificationForm(username, type);
 			}
 			else
 			{
-				var verificationForm = new CodeVerificationForm(username, email, type);
-				verificationForm.Show();
+				verificationForm = new CodeVerificationForm(username, email, type);
 			}
-			// —крываем логин/регистрацию (сохран€ем данные)
+
+			verificationForm.FormClosed += (s, e) =>
+			{
+				// ѕри закрытии VerificationForm провер€ем, не нужно ли завершить приложение
+				if (Application.OpenForms.Count == 0)
+					Application.Exit();
+			};
+
+			verificationForm.Show();
 			_loginForm?.Hide();
 			_registerForm?.Hide();
 		}
@@ -109,6 +123,11 @@ namespace DesktopClient
 		{
 			// √лавный чат - нова€ форма, все остальные закрываем
 			var mainForm = new MainChatForm();
+			mainForm.FormClosed += (s, e) =>
+			{
+				// ѕри закрытии главной формы завершаем приложение
+				Application.Exit();
+			};
 			mainForm.Show();
 
 			// «акрываем ¬—≈ предыдущие формы

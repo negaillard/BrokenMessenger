@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ListView;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace DesktopClient
@@ -293,6 +294,7 @@ namespace DesktopClient
 						ShowError(result.message);
 						return;
 					}
+					// сюда надо передавать из результата имя и email, чтобы создать бд(локальную)
 					// После успешной верификации
 					Program.ShowMainChatForm();
 					this.Close();
@@ -318,11 +320,24 @@ namespace DesktopClient
 			{
 				btnResend.Enabled = false;
 				btnResend.Text = "Отправка...";
-
-				// TODO: Вызов API для повторной отправки кода
-				// var result = await _authService.ResendCodeAsync(_username, _email, _verificationType);
-
-				await System.Threading.Tasks.Task.Delay(500);
+				if (_verificationType == VerificationType.Login)
+				{
+					var result = await _authService.SendLoginCodeAsync(_username);
+					if (!result.success)
+					{
+						ShowError(result.message);
+						return;
+					}
+				}
+				else
+				{
+					var result = await _authService.SendRegistrationCodeAsync(_username, _email);
+					if (!result.success)
+					{
+						ShowError(result.message);
+						return;
+					}
+				}
 
 				// Сбрасываем таймер
 				StartResendTimer();

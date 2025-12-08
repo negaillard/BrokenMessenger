@@ -120,34 +120,29 @@ namespace Logic
 			}
 		}
 
-		public PaginatedResult<ChatViewModel> SearchChats(ChatSearchModel searchModel, int page, int pageSize)
+		public async Task<PaginatedResult<ChatViewModel>> GetRecentChatsAsync(int page = 1, int pageSize = 30)
 		{
 			if (page < 1) page = 1;
-			if (pageSize < 1) pageSize = 10;
+			if (pageSize < 1) pageSize = 30;
 
-			// Получаем пагинированные данные из хранилища
-			var storageResult = _chatStorage.SearchChats(searchModel, page, pageSize);
-
-			// Преобразуем в ViewModel если нужно (или можно делать это в хранилище)
-			var viewModels = storageResult.Items.Select(chat => new ChatViewModel
-			{
-				Id = chat.Id,
-				CurrentUser = chat.CurrentUser,
-				Interlocutor = chat.Interlocutor
-			}).ToList();
-
-			return new PaginatedResult<ChatViewModel>
-			{
-				Items = viewModels,
-				Page = storageResult.Page,
-				PageSize = storageResult.PageSize,
-				TotalPages = storageResult.TotalPages,
-				TotalCount = storageResult.TotalCount
-			};
+			return await _chatStorage.GetRecentChatsAsync(page, pageSize);
 		}
 
-		
+		public async Task<PaginatedResult<ChatViewModel>> SearchChatsAsync(
+			string interlocutorName,
+			int page = 1,
+			int pageSize = 30)
+		{
+			if (page < 1) page = 1;
+			if (pageSize < 1) pageSize = 30;
+
+			var searchModel = new ChatSearchModel
+			{
+				Interlocutor = interlocutorName
+				// Можно добавить и другие фильтры при необходимости
+			};
+
+			return await _chatStorage.SearchChatsAsync(searchModel, page, pageSize);
+		}
 	}
-
-
 }

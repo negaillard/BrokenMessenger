@@ -207,6 +207,40 @@ namespace AuthServerAPI.Controllers
 			return Ok(new ValidateSessionResponse{ IsValid = true, Username = isValid.Item2 });
 		}
 
+		[HttpGet("search")]
+		public async Task<IActionResult> SearchUsers(
+		   [FromQuery] string query,
+		   [FromQuery] int page = 1,
+		   [FromQuery] int pageSize = 30)
+		{
+			if (string.IsNullOrWhiteSpace(query))
+			{
+				return BadRequest("Search query is required");
+			}
+
+			var result = await _userLogic.SearchUsersAsync(query, page, pageSize);
+			return Ok(result);
+		}
+
+		[HttpGet("{id}")]
+		public async Task<IActionResult> GetUserById(string id)
+		{
+			try
+			{
+				int iid = Convert.ToInt32(id);
+				var user = await _userLogic.ReadElementAsync(new UserSearchModel { Id = iid });
+				if (user == null)
+				{
+					return NotFound($"User with id {id} not found");
+				}
+
+				return Ok(user);
+			}
+			catch (Exception ex) {
+				return BadRequest("Invalid id");
+			}		
+		}
+
 		#region Нахуй не нужны
 		// Проверка доступности username
 		[HttpPost("check-username")]

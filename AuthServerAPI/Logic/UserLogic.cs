@@ -1,6 +1,7 @@
 ﻿using AuthServerAPI.Logic.Interfaces;
 using AuthServerAPI.Models;
 using AuthServerAPI.Storage;
+using Models;
 
 namespace AuthServerAPI.Logic
 {
@@ -110,6 +111,22 @@ namespace AuthServerAPI.Logic
 			{
 				throw new InvalidOperationException("Такая пользователь уже есть");
 			}
+		}
+
+		public async Task<PaginatedResult<UserBindingModel>> SearchUsersAsync(
+		   string username,
+		   int page = 1,
+		   int pageSize = 30)
+		{
+			if (page < 1) page = 1;
+			if (pageSize < 1) pageSize = 30;
+
+			var searchModel = new UserSearchModel
+			{
+				Username = username
+			};
+
+			return await _userStorage.SearchUsersAsync(searchModel, page, pageSize);
 		}
 	}
 }

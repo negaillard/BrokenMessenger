@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using AuthServerAPI.Models;
+using Models;
 
 namespace AuthServerAPI.Storage
 {
@@ -101,6 +102,49 @@ namespace AuthServerAPI.Storage
 			chat.Update(model);
 			await _context.SaveChangesAsync();
 			return chat.GetBindingModel;
+		}
+
+		public async Task<PaginatedResult<UserBindingModel>> SearchUsersAsync(
+		UserSearchModel searchModel,
+		int page = 1,
+		int pageSize = 30)
+		{
+			// Базовый запрос
+			var baseQuery = _context.Users.AsQueryable();
+
+			// Применяем фильтр по имени пользователя
+			if (!string.IsNullOrEmpty(searchModel.Username))
+			{
+				baseQuery = baseQuery.Where(u =>
+					u.Username.ToLower().Contains(searchModel.Username.ToLower()));
+			}
+
+			// Получаем общее количество
+			int totalCount = await baseQuery.CountAsync();
+			int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+			// Получаем данные с пагинацией
+			var users = await baseQuery
+				// Сортируем по релевантности: сначала точное совпадение
+				.OrderByDescending(u =>
+					!string.IsNullOrEmpty(searchModel.Username) &&
+					u.Username.ToLower() == searchModel.Username.ToLower() ? 1 : 0)
+				.ThenBy(u => u.Username) // Затем по алфавиту
+				.Skip((page - 1) * pageSize)
+				.Take(pageSize)
+				.ToListAsync();
+
+			// Преобразуем в ViewModel
+			var viewModels = users.Select(x => x.GetBindingModel).ToList();
+
+			return new PaginatedResult<UserBindingModel>
+			{
+				Items = viewModels,
+				Page = page,
+				PageSize = pageSize,
+				TotalPages = totalPages,
+				TotalCount = totalCount
+			};
 		}
 	}
 }

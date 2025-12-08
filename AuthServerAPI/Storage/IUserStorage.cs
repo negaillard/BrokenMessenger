@@ -1,4 +1,5 @@
 ﻿using AuthServerAPI.Models;
+using Models;
 
 namespace AuthServerAPI.Storage
 {
@@ -10,5 +11,6 @@ namespace AuthServerAPI.Storage
 		Task<UserBindingModel?> InsertElementAsync(UserBindingModel model);
 		Task<UserBindingModel?> UpdateAsync(UserBindingModel model);
 		Task<UserBindingModel?> DeleteAsync(UserBindingModel model);
+		Task<PaginatedResult<UserBindingModel>> SearchUsersAsync(UserSearchModel searchModel, int page, int pageSize);
 	}
 }

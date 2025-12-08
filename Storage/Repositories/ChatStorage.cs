@@ -99,43 +99,114 @@ namespace Storage.Repositories
 			return chat.GetViewModel;
 		}
 
-		public PaginatedResult<Chat> SearchChats(ChatSearchModel searchModel, int page, int pageSize)
+		public async Task<PaginatedResult<ChatViewModel>> GetRecentChatsAsync(int page, int pageSize)
+		{
+			// Базовый запрос для чатов с сообщениями
+			var baseQuery = _context.Chats
+				.Where(c => c.Messages.Any())
+				.AsQueryable();
+
+			// Получаем общее количество
+			int totalCount = await baseQuery.CountAsync();
+			int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+			// Выбираем данные с пагинацией
+			var chats = await baseQuery
+				// Загружаем последнее сообщение для каждого чата
+				.Select(c => new
+				{
+					Chat = c,
+					LastMessage = c.Messages.OrderByDescending(m => m.Timestamp).FirstOrDefault()
+				})
+				// Сортируем по дате последнего сообщения (новые сверху)
+				.OrderByDescending(x => x.LastMessage.Timestamp)
+				// Применяем пагинацию
+				.Skip((page - 1) * pageSize)
+				.Take(pageSize)
+				.ToListAsync();
+
+			// Преобразуем в ViewModel
+			var viewModels = chats.Select(x => new ChatViewModel
+			{
+				Id = x.Chat.Id,
+				CurrentUser = x.Chat.CurrentUser,
+				Interlocutor = x.Chat.Interlocutor,
+				LastMessageText = x.LastMessage?.Content ?? "",
+				LastMessageTime = x.LastMessage?.Timestamp
+			}).ToList();
+
+			return new PaginatedResult<ChatViewModel>
+			{
+				Items = viewModels,
+				Page = page,
+				PageSize = pageSize,
+				TotalPages = totalPages,
+				TotalCount = totalCount
+			};
+		}
+
+		public async Task<PaginatedResult<ChatViewModel>> SearchChatsAsync(
+			ChatSearchModel searchModel,
+			int page = 1,
+			int pageSize = 30)
 		{
 			// Базовый запрос
-			IQueryable<Chat> query = _context.Chats;
+			var baseQuery = _context.Chats
+				.Where(c => c.Messages.Any()) // Только чаты с сообщениями
+				.AsQueryable();
 
-			// Применяем фильтры
+			// Применяем фильтры из searchModel
 			if (searchModel.Id.HasValue)
 			{
-				query = query.Where(c => c.Id == searchModel.Id.Value);
+				baseQuery = baseQuery.Where(c => c.Id == searchModel.Id.Value);
 			}
 
 			if (!string.IsNullOrEmpty(searchModel.CurrentUser))
 			{
-				query = query.Where(c => c.CurrentUser.Contains(searchModel.CurrentUser));
+				baseQuery = baseQuery.Where(c => c.CurrentUser.Contains(searchModel.CurrentUser));
 			}
 
 			if (!string.IsNullOrEmpty(searchModel.Interlocutor))
 			{
-				query = query.Where(c => c.Interlocutor.Contains(searchModel.Interlocutor));
+				// Поиск по имени собеседника (регистронезависимый)
+				baseQuery = baseQuery.Where(c =>
+					c.Interlocutor.ToLower().Contains(searchModel.Interlocutor.ToLower()));
 			}
 
-			// Сортировка (например, по ID или дате последнего сообщения)
-			query = query.OrderByDescending(c => c.Id);
-
-			// Получаем общее количество ДО пагинации
-			int totalCount = query.Count();
+			// Получаем общее количество с учетом фильтров
+			int totalCount = await baseQuery.CountAsync();
 			int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
-			// Применяем пагинацию
-			var items = query
+			// Получаем данные с пагинацией
+			var chats = await baseQuery
+				.Select(c => new
+				{
+					Chat = c,
+					LastMessage = c.Messages.OrderByDescending(m => m.Timestamp).FirstOrDefault()
+				})
+				// Сортируем по релевантности: сначала точное совпадение, затем по дате
+				.OrderByDescending(x =>
+					!string.IsNullOrEmpty(searchModel.Interlocutor) &&
+					x.Chat.Interlocutor.ToLower() == searchModel.Interlocutor.ToLower() ? 1 : 0)
+				.ThenByDescending(x => x.LastMessage.Timestamp)
+				// Пагинация
 				.Skip((page - 1) * pageSize)
 				.Take(pageSize)
-				.ToList();
+				.ToListAsync();
 
-			return new PaginatedResult<Chat>
+			// Преобразуем в ViewModel
+			var viewModels = chats.Select(x => new ChatViewModel
 			{
-				Items = items,
+				Id = x.Chat.Id,
+				CurrentUser = x.Chat.CurrentUser,
+				Interlocutor = x.Chat.Interlocutor,
+				LastMessageText = x.LastMessage?.Content ?? "",
+				LastMessageTime = x.LastMessage?.Timestamp
+			}).ToList();
+
+			return new PaginatedResult<ChatViewModel>
+			{
+				Items = viewModels,
 				Page = page,
 				PageSize = pageSize,
 				TotalPages = totalPages,

@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Models.Binding;
+using Models.Pagination;
 using Models.Search;
 using Models.StorageContracts;
 using Models.View;
@@ -96,6 +97,50 @@ namespace Storage.Repositories
 			chat.Update(model);
 			await _context.SaveChangesAsync();
 			return chat.GetViewModel;
+		}
+
+		public PaginatedResult<Chat> SearchChats(ChatSearchModel searchModel, int page, int pageSize)
+		{
+			// Базовый запрос
+			IQueryable<Chat> query = _context.Chats;
+
+			// Применяем фильтры
+			if (searchModel.Id.HasValue)
+			{
+				query = query.Where(c => c.Id == searchModel.Id.Value);
+			}
+
+			if (!string.IsNullOrEmpty(searchModel.CurrentUser))
+			{
+				query = query.Where(c => c.CurrentUser.Contains(searchModel.CurrentUser));
+			}
+
+			if (!string.IsNullOrEmpty(searchModel.Interlocutor))
+			{
+				query = query.Where(c => c.Interlocutor.Contains(searchModel.Interlocutor));
+			}
+
+			// Сортировка (например, по ID или дате последнего сообщения)
+			query = query.OrderByDescending(c => c.Id);
+
+			// Получаем общее количество ДО пагинации
+			int totalCount = query.Count();
+			int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+			// Применяем пагинацию
+			var items = query
+				.Skip((page - 1) * pageSize)
+				.Take(pageSize)
+				.ToList();
+
+			return new PaginatedResult<Chat>
+			{
+				Items = items,
+				Page = page,
+				PageSize = pageSize,
+				TotalPages = totalPages,
+				TotalCount = totalCount
+			};
 		}
 	}
 }

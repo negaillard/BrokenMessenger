@@ -12,5 +12,6 @@ namespace Models.StorageContracts
 		Task<ChatViewModel?> InsertAsync(ChatBindingModel model);
 		Task<ChatViewModel?> UpdateAsync(ChatBindingModel model);
 		Task<ChatViewModel?> DeleteAsync(ChatBindingModel model);
+
 	}
 }

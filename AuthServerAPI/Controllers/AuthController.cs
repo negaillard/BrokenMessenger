@@ -201,10 +201,10 @@ namespace AuthServerAPI.Controllers
 				return Unauthorized();
 
 			var isValid = await _sessionService.ValidateSessionAsync(sessionId);
-			if (!isValid)
+			if (!isValid.Item1)
 				return Unauthorized();
 
-			return Ok(new ValidateSessionResponse{ IsValid = true });
+			return Ok(new ValidateSessionResponse{ IsValid = true, Username = isValid.Item2 });
 		}
 
 		#region Нахуй не нужны

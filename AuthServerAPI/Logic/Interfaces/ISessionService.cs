@@ -6,7 +6,7 @@ namespace AuthServerAPI.Logic.Interfaces
 	{
 		Task<string> CreateSessionAsync(int userId, string username);
 		Task<UserSession> GetSessionAsync(string sessionId);
-		Task<bool> ValidateSessionAsync(string sessionId);
+		Task<(bool, string)> ValidateSessionAsync(string sessionId);
 		Task<bool> DeleteSessionAsync(string sessionId);
 		Task CleanExpiredSessionsAsync();
 	}

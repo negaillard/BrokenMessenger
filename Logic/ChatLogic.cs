@@ -1,8 +1,11 @@
-﻿using Models.Binding;
+﻿using Microsoft.Extensions.Logging;
+using Models.Binding;
 using Models.LogicContracts;
+using Models.Pagination;
 using Models.Search;
 using Models.StorageContracts;
 using Models.View;
+using Storage.Models;
 using Storage.Repositories;
 
 namespace Logic
@@ -116,5 +119,35 @@ namespace Logic
 				throw new InvalidOperationException("Такая чат уже есть");
 			}
 		}
+
+		public PaginatedResult<ChatViewModel> SearchChats(ChatSearchModel searchModel, int page, int pageSize)
+		{
+			if (page < 1) page = 1;
+			if (pageSize < 1) pageSize = 10;
+
+			// Получаем пагинированные данные из хранилища
+			var storageResult = _chatStorage.SearchChats(searchModel, page, pageSize);
+
+			// Преобразуем в ViewModel если нужно (или можно делать это в хранилище)
+			var viewModels = storageResult.Items.Select(chat => new ChatViewModel
+			{
+				Id = chat.Id,
+				CurrentUser = chat.CurrentUser,
+				Interlocutor = chat.Interlocutor
+			}).ToList();
+
+			return new PaginatedResult<ChatViewModel>
+			{
+				Items = viewModels,
+				Page = storageResult.Page,
+				PageSize = storageResult.PageSize,
+				TotalPages = storageResult.TotalPages,
+				TotalCount = storageResult.TotalCount
+			};
+		}
+
+		
 	}
+
+
 }

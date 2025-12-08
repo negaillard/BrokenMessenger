@@ -4,6 +4,7 @@ using Models.Search;
 using Models.StorageContracts;
 using Models.View;
 using Storage.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace Logic
 {

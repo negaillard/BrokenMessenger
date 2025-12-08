@@ -143,16 +143,16 @@ namespace DesktopClient
 			return SecureStorage.HasSessionToken();
 		}
 
-		public async Task<bool> ValidateSessionAsync()
+		public async Task<(bool, string)> ValidateSessionAsync()
 		{
 			try
 			{
 				var result = await _apiClient.GetAsync<ValidateSessionResponse>("/api/auth/validate-session");
-				return result.IsValid;
+				return (result.IsValid, result.Username);
 			}
 			catch(Exception ex) 
 			{
-				return false;
+				return (false, string.Empty);
 			}
 		}
 	}

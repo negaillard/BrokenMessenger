@@ -57,16 +57,16 @@ namespace AuthServerAPI.Logic
 			return JsonSerializer.Deserialize<UserSession>(sessionJson);
 		}
 
-		public async Task<bool> ValidateSessionAsync(string sessionId)
+		public async Task<(bool, string)> ValidateSessionAsync(string sessionId)
 		{
 			var session = await GetSessionAsync(sessionId);
 			if(	session != null && 
 				session.IsActive && 
 				session.ExpiresAt > DateTime.UtcNow)
 			{
-				return true;
+				return (true, session.Username);
 			}
-			return false;
+			return (false, string.Empty);
 		}
 
 		public async Task<bool> DeleteSessionAsync(string sessionId)

@@ -37,12 +37,11 @@ namespace DesktopClient
 			}
 			else
 			{
-				/// почему то в любом случае считается невалидной
-				bool isValid = await AuthService.ValidateSessionAsync();
+				var isValid = await AuthService.ValidateSessionAsync();
 
-				if (isValid)
+				if (isValid.Item1)
 				{
-					ShowMainChatForm();
+					ShowMainChatForm(isValid.Item2, string.Empty);
 				}
 				else
 				{
@@ -131,18 +130,16 @@ namespace DesktopClient
 			_registerForm?.Hide();
 		}
 
-		public static void ShowMainChatForm()
+		public static void ShowMainChatForm(string username, string email)
 		{
-			// Главный чат - новая форма, все остальные закрываем
-			var mainForm = new MainChatForm();
+			var mainForm = new MainChatForm(username);
 			mainForm.FormClosed += (s, e) =>
 			{
-				// При закрытии главной формы завершаем приложение
+
 				Application.Exit();
 			};
 			mainForm.Show();
 
-			// Закрываем ВСЕ предыдущие формы
 			_welcomeForm?.Close();
 			_loginForm?.Close();
 			_registerForm?.Close();

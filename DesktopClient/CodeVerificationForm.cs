@@ -296,7 +296,7 @@ namespace DesktopClient
 					}
 					// сюда надо передавать из результата имя и email, чтобы создать бд(локальную)
 					// После успешной верификации
-					Program.ShowMainChatForm();
+					Program.ShowMainChatForm(_username, string.Empty);
 					this.Close();
 
 					HideError();

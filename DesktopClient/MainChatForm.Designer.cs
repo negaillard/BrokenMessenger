@@ -15,8 +15,14 @@
 			private TextBox txtMessage;
 			private Button btnSend;
 			private Label lblChatsTitle;
+			private Panel userMenuPanel;
+			private Button btnUserMenu;
+			private Panel dropdownMenu;
+			private Button btnProfile;
+			private Button btnLogout;
+			private Label lblUserInfo;
 
-			protected override void Dispose(bool disposing)
+		protected override void Dispose(bool disposing)
 			{
 				if (disposing && (components != null))
 				{
@@ -39,6 +45,7 @@
 			inputPanel = new TableLayoutPanel();
 			txtMessage = new TextBox();
 			btnSend = new Button();
+
 			panelMain.SuspendLayout();
 			((System.ComponentModel.ISupportInitialize)splitContainer).BeginInit();
 			splitContainer.Panel1.SuspendLayout();
@@ -222,7 +229,7 @@
 			ClientSize = new Size(1200, 800);
 			Controls.Add(panelMain);
 			Name = "MainChatForm";
-			Text = "Secure Chat - Мессенджер";
+			Text = "Мессенджер";
 			WindowState = FormWindowState.Maximized;
 			panelMain.ResumeLayout(false);
 			splitContainer.Panel1.ResumeLayout(false);

@@ -9,5 +9,6 @@ namespace Requests.Responses
 	public class ValidateSessionResponse
 	{
 		public bool IsValid { get; set; }
+		public string Username { get; set; }
 	}
 }

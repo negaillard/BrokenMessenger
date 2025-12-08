@@ -7,26 +7,34 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Models.Search;
+using Models.View;
+using Models.Binding;
 
 namespace DesktopClient
 {
 	using System;
+	using System.ComponentModel.DataAnnotations;
 	using System.Drawing;
 	using System.Linq;
 	using System.Windows.Forms;
+	using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 		public partial class MainChatForm : Form
 		{
-			public MainChatForm()
+			private ChatClient _chatClient;
+			private string _currentInterlocutor;
+
+			public MainChatForm(string username)
 			{
 				InitializeComponent();
+				_chatClient = new ChatClient(username);
+				_chatClient.StartReceiving();
 
 				this.Load += MainChatForm_Load;
 				this.SizeChanged += MainChatForm_SizeChanged;
 
-				// Загрузка тестовых данных
-				LoadSampleChats();
-				LoadSampleMessages();
+				LoadChatsFromDatabase();	
 			}
 
 			private void MainChatForm_Load(object sender, EventArgs e)
@@ -34,225 +42,287 @@ namespace DesktopClient
 				CenterControls();
 			}
 
-			private void MainChatForm_SizeChanged(object sender, EventArgs e)
+		#region Отрисовка
+		private async Task<Panel> CreateChatItemAsync(dynamic chat, int yPos)
+		{
+			var panel = new Panel();
+			panel.Size = new Size(350, 80);
+			panel.Location = new Point(0, yPos);
+			panel.BackColor = Color.White;
+			panel.Cursor = Cursors.Hand;
+			panel.BorderStyle = BorderStyle.FixedSingle;
+
+			// Аватар
+			var avatar = new Panel();
+			avatar.Size = new Size(50, 50);
+			avatar.Location = new Point(10, 15);
+			avatar.BackColor = Color.FromArgb(86, 130, 163);
+			avatar.BorderStyle = BorderStyle.FixedSingle;
+			panel.Controls.Add(avatar);
+
+			// Имя
+			var lblName = new Label();
+			lblName.Text = chat.Interlocutor;
+			lblName.Font = new Font("Segoe UI", 12, FontStyle.Bold);
+			lblName.ForeColor = Color.Black;
+			lblName.AutoSize = true;
+			lblName.Location = new Point(70, 15);
+			panel.Controls.Add(lblName);
+
+			var lastMessage = await GetLastMessagePreview(chat.Interlocutor);
+
+			// Последнее сообщение
+			var lblLastMessage = new Label();
+			lblLastMessage.Text = lastMessage.Item1;
+			lblLastMessage.Font = new Font("Segoe UI", 10, FontStyle.Regular);
+			lblLastMessage.ForeColor = Color.Gray;
+			lblLastMessage.AutoSize = true;
+			lblLastMessage.Location = new Point(70, 40);
+			panel.Controls.Add(lblLastMessage);
+
+			// Время
+			var lblTime = new Label();
+			lblTime.Text =lastMessage.Item2.ToString();
+			lblTime.Font = new Font("Segoe UI", 9, FontStyle.Regular);
+			lblTime.ForeColor = Color.Gray;
+			lblTime.AutoSize = true;
+			lblTime.Location = new Point(300, 15);
+			lblTime.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+			panel.Controls.Add(lblTime);
+
+			// Обработчик клика
+			panel.Click += async (s, e) => await SelectChatAsync(chat.Interlocutor);
+
+			return panel;
+		}
+
+		private void TxtMessage_KeyDown(object sender, KeyEventArgs e)
+		{
+			if (e.KeyCode == Keys.Enter && !e.Shift)
 			{
-				if (this.IsHandleCreated && panelMain != null)
+				e.Handled = true;
+				e.SuppressKeyPress = true;
+				SendMessageAsync();
+			}
+		}
+
+		private void BtnSend_Click(object sender, EventArgs e)
+		{
+			SendMessageAsync();
+		}
+
+		private Panel CreateMessageControl(string text, bool isMyMessage, string time, int yPos)
+		{
+			var panel = new Panel();
+			panel.AutoSize = true;
+			panel.MaximumSize = new Size(400, 0);
+			panel.BackColor = Color.Transparent;
+
+			// Текст сообщения
+			var lblText = new Label();
+			lblText.Text = text;
+			lblText.Font = new Font("Segoe UI", 11, FontStyle.Regular);
+			lblText.ForeColor = Color.Black;
+			lblText.BackColor = isMyMessage ? Color.FromArgb(220, 248, 198) : Color.White;
+			lblText.AutoSize = true;
+			lblText.MaximumSize = new Size(350, 0);
+			lblText.Padding = new Padding(10);
+			lblText.BorderStyle = BorderStyle.FixedSingle;
+			lblText.Location = new Point(0, 0);
+
+			// Время
+			var lblTime = new Label();
+			lblTime.Text = time;
+			lblTime.Font = new Font("Segoe UI", 8, FontStyle.Regular);
+			lblTime.ForeColor = Color.Gray;
+			lblTime.AutoSize = true;
+			lblTime.Location = new Point(lblText.Right - 40, lblText.Bottom + 2);
+
+			panel.Controls.Add(lblText);
+			panel.Controls.Add(lblTime);
+
+			panel.Size = new Size(lblText.Width, lblText.Height + 20);
+
+			if (isMyMessage)
+			{
+				panel.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+				panel.Location = new Point(messagesPanel.Width - panel.Width - 20, yPos);
+			}
+			else
+			{
+				panel.Anchor = AnchorStyles.Top | AnchorStyles.Left;
+				panel.Location = new Point(20, yPos);
+			}
+
+			return panel;
+		}
+		#endregion
+
+
+		#region Функциональность чата
+		// переделать, надо чтобы мы загружали сообщения из чата этим методом
+		private async Task LoadChatsFromDatabase()
+			{
+				try
 				{
-					CenterControls();
+					chatsListPanel.Controls.Clear();
+
+					var chats = await _chatClient._chatLogic.ReadListAsync(null);
+
+					if (chats == null || !chats.Any()) {
+						var noChatsLabel = new Label();
+						noChatsLabel.Text = "Пока нет чатов...";
+						noChatsLabel.Font = new Font("Segoe UI", 11, FontStyle.Regular);
+						noChatsLabel.ForeColor = Color.Gray;
+						noChatsLabel.AutoSize = true;
+						noChatsLabel.Location = new Point(50, 50);
+						chatsListPanel.Controls.Add(noChatsLabel);
+						return;
+					}
+
+					int yPos = 0;
+					foreach(var chat in chats)
+					{
+						var chatItem = await CreateChatItemAsync(chat, yPos);
+						chatsListPanel.Controls.Add(chatItem);
+						yPos += 80;
+					}
+				}
+				catch (Exception ex) {
+					MessageBox.Show($"Ошибка загрузки чатов: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
 				}
 			}
 
-			#region Функциональность чата
+			
 
-			private void LoadSampleChats()
+			private async Task<(string, DateTime)> GetLastMessagePreview(string interlocutor)
 			{
-				// Очищаем список чатов
-				chatsListPanel.Controls.Clear();
-
-				// Тестовые чаты
-				var sampleChats = new[]
+				try
 				{
-					new { Name = "Алексей Петров", LastMessage = "Привет! Как дела?", Time = "12:30", Unread = 2 },
-					new { Name = "Мария Иванова", LastMessage = "Жду тебя в офисе", Time = "11:45", Unread = 0 },
-					new { Name = "Команда разработки", LastMessage = "Собрание в 15:00", Time = "10:20", Unread = 5 },
-					new { Name = "Иван Сидоров", LastMessage = "Отправил документы", Time = "09:15", Unread = 1 },
-					new { Name = "Ольга Козлова", LastMessage = "Спасибо за помощь!", Time = "Вчера", Unread = 0 },
-					new { Name = "Дмитрий Волков", LastMessage = "Когда сможешь созвониться?", Time = "Вчера", Unread = 3 }
-				};
+					var chat = await _chatClient._chatLogic.ReadElementAsync(new Models.Search.ChatSearchModel
+					{
+						CurrentUser = _chatClient.GetUsername(),
+						Interlocutor = interlocutor
+					});
+					if (chat != null) {
+						var messages = await _chatClient._messageLogic.ReadListAsync(new MessageSearchModel
+						{
+							ChatId = chat.Id,
+						});
 
-				int yPos = 0;
-				foreach (var chat in sampleChats)
+						var lastMessage = messages?.OrderByDescending(m => m.Timestamp).FirstOrDefault();
+						if (lastMessage != null) {
+							return (lastMessage.Content.Length > 20
+								? lastMessage.Content.Substring(0, 20) + "..."
+								: lastMessage.Content, lastMessage.Timestamp.ToLocalTime());
+						}
+					}
+				}
+				catch (Exception ex) 
 				{
-					var chatItem = CreateChatItem(chat.Name, chat.LastMessage, chat.Time, chat.Unread, yPos);
-					chatsListPanel.Controls.Add(chatItem);
-					yPos += 80;
+					Console.WriteLine($"Ошибка получения последнего сообщения: {ex.Message}");
+				}
+
+				return ("Нет сообщений", DateTime.Now);
+			}
+
+			private async Task LoadMessagesAsync(string interlocutor)
+			{
+				try
+				{
+					messagesPanel.Controls.Clear();
+					_currentInterlocutor = interlocutor;
+
+					await _chatClient.SetCurrentInterlocutorAsync(interlocutor);
+
+					var chat = await _chatClient._chatLogic.ReadElementAsync(new ChatSearchModel
+					{
+						CurrentUser = _chatClient.GetUsername(),
+						Interlocutor = interlocutor
+					});
+
+					if (chat == null)
+					{
+						await _chatClient._chatLogic.CreateAsync(new ChatBindingModel
+						{
+							CurrentUser = _chatClient.GetUsername(),
+							Interlocutor = interlocutor
+						});
+						return;
+					}
+					var messages = await _chatClient._messageLogic.ReadListAsync(new MessageSearchModel
+					{
+						ChatId = chat.Id,
+					});
+
+					if (messages != null && messages.Any())
+					{
+						int yPos = 10;
+						foreach (var msg in messages.OrderBy(m => m.Timestamp))
+						{
+							var messageControl = CreateMessageControl(
+								msg.Content,
+								msg.Sender == _chatClient.GetUsername(),
+								msg.Timestamp.ToString("HH:mm"),
+								yPos
+							);
+							messagesPanel.Controls.Add(messageControl);
+							yPos += messageControl.Height + 5;
+						}
+					}
+
+					if (messagesPanel.Controls.Count > 0)
+					{
+						messagesPanel.ScrollControlIntoView(messagesPanel.Controls[messagesPanel.Controls.Count - 1]);
+					}
+				}
+				catch (Exception ex) {
+					MessageBox.Show($"Ошибка загрузки сообщений: {ex.Message}", "Ошибка",
+					MessageBoxButtons.OK, MessageBoxIcon.Error);
 				}
 			}
 
-			private Panel CreateChatItem(string name, string lastMessage, string time, int unread, int yPos)
-			{
-				var panel = new Panel();
-				panel.Size = new Size(350, 80);
-				panel.Location = new Point(0, yPos);
-				panel.BackColor = Color.White;
-				panel.Cursor = Cursors.Hand;
-				panel.BorderStyle = BorderStyle.FixedSingle;
+			
 
-				// Аватар
-				var avatar = new Panel();
-				avatar.Size = new Size(50, 50);
-				avatar.Location = new Point(10, 15);
-				avatar.BackColor = Color.FromArgb(86, 130, 163);
-				avatar.BorderStyle = BorderStyle.FixedSingle;
-				panel.Controls.Add(avatar);
-
-				// Имя
-				var lblName = new Label();
-				lblName.Text = name;
-				lblName.Font = new Font("Segoe UI", 12, FontStyle.Bold);
-				lblName.ForeColor = Color.Black;
-				lblName.AutoSize = true;
-				lblName.Location = new Point(70, 15);
-				panel.Controls.Add(lblName);
-
-				// Последнее сообщение
-				var lblLastMessage = new Label();
-				lblLastMessage.Text = lastMessage;
-				lblLastMessage.Font = new Font("Segoe UI", 10, FontStyle.Regular);
-				lblLastMessage.ForeColor = Color.Gray;
-				lblLastMessage.AutoSize = true;
-				lblLastMessage.Location = new Point(70, 40);
-				panel.Controls.Add(lblLastMessage);
-
-				// Время
-				var lblTime = new Label();
-				lblTime.Text = time;
-				lblTime.Font = new Font("Segoe UI", 9, FontStyle.Regular);
-				lblTime.ForeColor = Color.Gray;
-				lblTime.AutoSize = true;
-				lblTime.Location = new Point(300, 15);
-				lblTime.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-				panel.Controls.Add(lblTime);
-
-				// Счетчик непрочитанных
-				if (unread > 0)
-				{
-					var lblUnread = new Label();
-					lblUnread.Text = unread.ToString();
-					lblUnread.Font = new Font("Segoe UI", 9, FontStyle.Bold);
-					lblUnread.ForeColor = Color.White;
-					lblUnread.BackColor = Color.FromArgb(86, 130, 163);
-					lblUnread.Size = new Size(20, 20);
-					lblUnread.Location = new Point(310, 40);
-					lblUnread.TextAlign = ContentAlignment.MiddleCenter;
-					lblUnread.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-					panel.Controls.Add(lblUnread);
-				}
-
-				// Обработчик клика
-				panel.Click += (s, e) => SelectChat(name);
-
-				return panel;
-			}
-
-			private void LoadSampleMessages()
-			{
-				messagesPanel.Controls.Clear();
-
-				// Тестовые сообщения
-				var messages = new[]
-				{
-					new { Text = "Привет! Как твои дела?", IsMyMessage = false, Time = "12:25" },
-					new { Text = "Привет! Все отлично, работаю над новым проектом. А у тебя как?", IsMyMessage = true, Time = "12:26" },
-					new { Text = "Тоже все хорошо. Хотел обсудить новый дизайн интерфейса", IsMyMessage = false, Time = "12:27" },
-					new { Text = "Конечно! Отправляй файлы, посмотрю", IsMyMessage = true, Time = "12:28" },
-					new { Text = "Уже отправил на почту. Посмотри, когда будет время", IsMyMessage = false, Time = "12:30" }
-				};
-
-				int yPos = 10;
-				foreach (var msg in messages)
-				{
-					var messageControl = CreateMessageControl(msg.Text, msg.IsMyMessage, msg.Time, yPos);
-					messagesPanel.Controls.Add(messageControl);
-					yPos += messageControl.Height + 5;
-				}
-
-				// Прокрутка вниз
-				if (messagesPanel.Controls.Count > 0)
-				{
-					messagesPanel.ScrollControlIntoView(messagesPanel.Controls[messagesPanel.Controls.Count - 1]);
-				}
-			}
-
-			private Panel CreateMessageControl(string text, bool isMyMessage, string time, int yPos)
-			{
-				var panel = new Panel();
-				panel.AutoSize = true;
-				panel.MaximumSize = new Size(400, 0);
-				panel.BackColor = Color.Transparent;
-
-				// Текст сообщения
-				var lblText = new Label();
-				lblText.Text = text;
-				lblText.Font = new Font("Segoe UI", 11, FontStyle.Regular);
-				lblText.ForeColor = Color.Black;
-				lblText.BackColor = isMyMessage ? Color.FromArgb(220, 248, 198) : Color.White;
-				lblText.AutoSize = true;
-				lblText.MaximumSize = new Size(350, 0);
-				lblText.Padding = new Padding(10);
-				lblText.BorderStyle = BorderStyle.FixedSingle;
-				lblText.Location = new Point(0, 0);
-
-				// Время
-				var lblTime = new Label();
-				lblTime.Text = time;
-				lblTime.Font = new Font("Segoe UI", 8, FontStyle.Regular);
-				lblTime.ForeColor = Color.Gray;
-				lblTime.AutoSize = true;
-				lblTime.Location = new Point(lblText.Right - 40, lblText.Bottom + 2);
-
-				panel.Controls.Add(lblText);
-				panel.Controls.Add(lblTime);
-
-				panel.Size = new Size(lblText.Width, lblText.Height + 20);
-
-				if (isMyMessage)
-				{
-					panel.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-					panel.Location = new Point(messagesPanel.Width - panel.Width - 20, yPos);
-				}
-				else
-				{
-					panel.Anchor = AnchorStyles.Top | AnchorStyles.Left;
-					panel.Location = new Point(20, yPos);
-				}
-
-				return panel;
-			}
-
-			private void SelectChat(string chatName)
+			private async Task SelectChatAsync(string interlocutor)
 			{
 				// Обновляем заголовок чата
 				chatHeaderPanel.Controls.Clear();
 
 				var lblChatName = new Label();
-				lblChatName.Text = chatName;
+				lblChatName.Text = interlocutor;
 				lblChatName.Font = new Font("Segoe UI", 14, FontStyle.Bold);
 				lblChatName.ForeColor = Color.Black;
 				lblChatName.AutoSize = true;
 				lblChatName.Location = new Point(15, 18);
 				chatHeaderPanel.Controls.Add(lblChatName);
 
-				// Загружаем сообщения для выбранного чата //// ПОМЕНЯТЬ!!!
-				LoadSampleMessages();
+				// Загружаем сообщения для выбранного чата 
+				await LoadMessagesAsync(interlocutor);
 			}
 
-			private void TxtMessage_KeyDown(object sender, KeyEventArgs e)
-			{
-				if (e.KeyCode == Keys.Enter && !e.Shift)
-				{
-					e.Handled = true;
-					e.SuppressKeyPress = true;
-					SendMessage();
-				}
-			}
-
-			private void BtnSend_Click(object sender, EventArgs e)
-			{
-				SendMessage();
-			}
-
-			private void SendMessage()
+			private async Task SendMessageAsync()
 			{
 				var message = txtMessage.Text.Trim();
-				if (!string.IsNullOrEmpty(message))
+				if (!string.IsNullOrEmpty(message) && !string.IsNullOrEmpty(_currentInterlocutor))
 				{
-					// TODO: Отправка сообщения через API
-					AddMessageToChat(message, true);
-					txtMessage.Clear();
+					try
+					{
+						await _chatClient.SendMessageAsync(message);
+
+						AddMessageToChat(message, true);
+						txtMessage.Clear();
+					}
+					catch (Exception ex) {
+						MessageBox.Show($"Ошибка отправки сообщения: {ex.Message}", "Ошибка",
+					MessageBoxButtons.OK, MessageBoxIcon.Error);
+					}
+				}
+				else if(string.IsNullOrEmpty(_currentInterlocutor)){
+					MessageBox.Show("Сначала выберите собеседника", "Информация",MessageBoxButtons.OK, MessageBoxIcon.Information);
 				}
 			}
-
+			
 			private void AddMessageToChat(string message, bool isMyMessage)
 			{
 				var yPos = messagesPanel.Controls.Count > 0 ?
@@ -265,11 +335,19 @@ namespace DesktopClient
 				messagesPanel.ScrollControlIntoView(messageControl);
 			}
 
-			#endregion
 
-			#region Вспомогательные методы
+		// добавит слушатель сообщений
+		#endregion
 
-			private void CenterControls()
+		#region Вспомогательные методы
+		private void MainChatForm_SizeChanged(object sender, EventArgs e)
+		{
+			if (this.IsHandleCreated && panelMain != null)
+			{
+				CenterControls();
+			}
+		}
+		private void CenterControls()
 			{
 				try
 				{
@@ -293,5 +371,6 @@ namespace DesktopClient
 			}
 
 			#endregion
+
 		}
 	}

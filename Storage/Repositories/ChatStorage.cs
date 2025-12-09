@@ -101,10 +101,12 @@ namespace Storage.Repositories
 
 		public async Task<PaginatedResult<ChatViewModel>> GetRecentChatsAsync(int page, int pageSize)
 		{
-			// Базовый запрос для чатов с сообщениями
 			var baseQuery = _context.Chats
-				.Where(c => c.Messages.Any())
 				.AsQueryable();
+			// Базовый запрос для чатов с сообщениями
+			//var baseQuery = _context.Chats
+			//	.Where(c => c.Messages.Any())
+			//	.AsQueryable();
 
 			// Получаем общее количество
 			int totalCount = await baseQuery.CountAsync();

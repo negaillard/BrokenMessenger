@@ -134,7 +134,7 @@ namespace Storage.Repositories
 
 			// Получаем сообщения с пагинацией (новые сообщения внизу)
 			var messages = await baseQuery
-				.OrderBy(m => m.Timestamp) // Старые сообщения сначала
+				.OrderByDescending(m => m.Timestamp) // Новые сообщения сверху в БД
 				.Skip((page - 1) * pageSize)
 				.Take(pageSize)
 				.Select(m => new MessageViewModel

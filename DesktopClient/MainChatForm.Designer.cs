@@ -175,6 +175,7 @@
 			messagesPanel.Name = "messagesPanel";
 			messagesPanel.Size = new Size(846, 640);
 			messagesPanel.TabIndex = 0;
+			
 			// 
 			// chatHeaderPanel
 			// 

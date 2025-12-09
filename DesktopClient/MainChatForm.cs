@@ -18,6 +18,15 @@ namespace DesktopClient
 		private string _me = "";
 		private readonly AuthService _authService;
 
+		private int _currentChatId = 0;
+		private int _currentMessagePage = 1;
+		private const int MESSAGES_PER_PAGE = 30;
+		private bool _isLoadingMessages = false;
+		private bool _hasMoreMessages = true;
+		private bool _isAtTop = false;
+		private bool _isChatLoaded = false; // Добавляем это поле
+		private List<MessageViewModel> _loadedMessages = new();
+
 		public MainChatForm(string username)
 		{
 			_me = username;
@@ -32,28 +41,8 @@ namespace DesktopClient
 			this.SizeChanged += MainChatForm_SizeChanged;
 		}
 
-
-		// вроде ненужен
-		private async void txtSearch_TextChanged(object sender, EventArgs e)
-		{
-			_searchQuery = txtSearch.Text.Trim();
-
-			// Если поле пусто — прячем панель и грузим обычные чаты
-			if (string.IsNullOrWhiteSpace(_searchQuery))
-			{
-				usersSearchPanel.Visible = false;
-				await LoadChatsFromDatabase(reset: true);
-				return;
-			}
-
-			// 1. Поиск по существующим чатам
-			await LoadChatsFromDatabase(reset: true);
-
-			// 2. Поиск пользователей
-			await LoadUsersSearchResultsAsync(_searchQuery);
-		}
-
 		#region События
+
 		private void MainChatForm_Load(object sender, EventArgs e)
 		{
 			_chatClient.StartReceiving();
@@ -106,6 +95,36 @@ namespace DesktopClient
 		#endregion
 
 		#region Отрисовка
+		private void RenderAllMessages()
+		{
+			messagesPanel.Controls.Clear();
+
+			if (!_loadedMessages.Any()) return;
+
+			int yPos = 10;
+
+			// Сортируем по времени (старые сверху, новые снизу)
+			var sortedMessages = _loadedMessages.OrderBy(m => m.Timestamp).ToList();
+
+			foreach (var msg in sortedMessages)
+			{
+				var messageControl = CreateMessageControl(
+					msg.Content,
+					msg.Sender == _chatClient.GetUsername(),
+					ConvertToLocalTime(msg.Timestamp).ToString("HH:mm"),
+					yPos
+				);
+
+				messagesPanel.Controls.Add(messageControl);
+				yPos += messageControl.Height + 5;
+			}
+
+			// Прокручиваем к последнему сообщению только при первой загрузке
+			if (_currentMessagePage == 1 && messagesPanel.Controls.Count > 0)
+			{
+				messagesPanel.ScrollControlIntoView(messagesPanel.Controls[messagesPanel.Controls.Count - 1]);
+			}
+		}
 		private void AddMessageToChat(string message, bool isMyMessage)
 		{
 			var yPos = messagesPanel.Controls.Count > 0 ?
@@ -285,6 +304,12 @@ namespace DesktopClient
 		#endregion
 
 		#region Функциональность чата
+		private async Task LoadMoreMessagesAsync()
+		{
+			if (!_hasMoreMessages || _isLoadingMessages) return;
+
+			await LoadMessagesAsync(_currentInterlocutor, loadMore: true);
+		}
 		private async Task LoadUsersSearchResultsAsync(string query)
 		{
 			try
@@ -341,7 +366,6 @@ namespace DesktopClient
 				MessageBox.Show("Ошибка поиска пользователей: " + ex.Message);
 			}
 		}
-		// переделать, надо чтобы мы загружали сообщения из чата этим методом
 		private async Task LoadChatsFromDatabase(bool reset = false)
 		{
 			if (_isLoading) return;
@@ -402,14 +426,23 @@ namespace DesktopClient
 				_isLoading = false;
 			}
 		}
-		private async Task LoadMessagesAsync(string interlocutor)
+		private async Task LoadMessagesAsync(string interlocutor, bool loadMore = false)
 		{
+			if (_isLoadingMessages) return;
+			_isLoadingMessages = true;
+
 			try
 			{
-				messagesPanel.Controls.Clear();
-				_currentInterlocutor = interlocutor;
-
-				await _chatClient.SetCurrentInterlocutorAsync(interlocutor);
+				// Если новый чат - сбрасываем всё
+				if (interlocutor != _currentInterlocutor && !loadMore)
+				{
+					_currentInterlocutor = interlocutor;
+					_currentMessagePage = 1;
+					_hasMoreMessages = true;
+					_loadedMessages.Clear(); // Очищаем старые сообщения
+					messagesPanel.Controls.Clear();
+					_isChatLoaded = false; // Сбрасываем флаг
+				}
 
 				var chat = await _chatClient._chatLogic.ReadElementAsync(new ChatSearchModel
 				{
@@ -426,40 +459,63 @@ namespace DesktopClient
 					});
 					return;
 				}
-				var messages = await _chatClient._messageLogic.ReadListAsync(new MessageSearchModel
-				{
-					ChatId = chat.Id,
-				});
 
-				if (messages != null && messages.Any())
+				_currentChatId = chat.Id;
+
+				// Загружаем страницу сообщений
+				var pageResult = await _chatClient._messageLogic.GetMessagesByChatIdAsync(
+					chatId: chat.Id,
+					page: _currentMessagePage,
+					pageSize: MESSAGES_PER_PAGE
+				);
+
+				if (pageResult?.Items != null && pageResult.Items.Any())
 				{
-					int yPos = 10;
-					foreach (var msg in messages.OrderBy(m => m.Timestamp))
+					// Добавляем в общий список
+					if (loadMore)
 					{
-						var messageControl = CreateMessageControl(
-							msg.Content,
-							msg.Sender == _chatClient.GetUsername(),
-							ConvertToLocalTime(msg.Timestamp).ToString("HH:mm"),
-							yPos
-						);
-						messagesPanel.Controls.Add(messageControl);
-						yPos += messageControl.Height + 5;
+						// При подгрузке вверх - добавляем в начало списка
+						_loadedMessages.InsertRange(0, pageResult.Items);
 					}
-				}
+					else
+					{
+						// Первая загрузка - заменяем список
+						_loadedMessages = pageResult.Items.ToList();
+					}
 
-				if (messagesPanel.Controls.Count > 0)
+					// Отрисовываем ВСЕ сообщения
+					RenderAllMessages();
+
+					// Обновляем состояние
+					_hasMoreMessages = pageResult.HasNextPage;
+					if (loadMore)
+					{
+						_currentMessagePage++;
+					}
+					_isChatLoaded = true;
+				}
+				else if (!loadMore)
 				{
-					messagesPanel.ScrollControlIntoView(messagesPanel.Controls[messagesPanel.Controls.Count - 1]);
+					_isChatLoaded = false;
+					// Нет сообщений
+					messagesPanel.Controls.Clear();
+					_loadedMessages.Clear();
 				}
 			}
 			catch (Exception ex)
 			{
-				MessageBox.Show($"Ошибка загрузки сообщений: {ex.Message}", "Ошибка",
-				MessageBoxButtons.OK, MessageBoxIcon.Error);
+				_isChatLoaded = false;
+				MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+			}
+			finally
+			{
+				_isLoadingMessages = false;
 			}
 		}
 		private async Task SelectChatAsync(string interlocutor)
 		{
+			_currentInterlocutor = interlocutor;
+			_chatClient.SetCurrentInterlocutorAsync(interlocutor);
 			// Обновляем заголовок чата
 			chatHeaderPanel.Controls.Clear();
 
@@ -550,6 +606,5 @@ namespace DesktopClient
 		}
 
 		#endregion
-
 	}
 }

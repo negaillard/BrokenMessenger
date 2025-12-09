@@ -348,7 +348,7 @@ namespace DesktopClient
 			}
 			catch (Exception ex)
 			{
-				ShowError($"Ошибка отправки: {ex.Message}");
+				ShowError($"{ex.Message}");
 			}
 			finally
 			{

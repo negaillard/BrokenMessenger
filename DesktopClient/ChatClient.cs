@@ -3,312 +3,200 @@ using Models.Binding;
 using Models.LogicContracts;
 using Models.Search;
 using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
 using System.Text;
-namespace DesktopClient
+using System.Text.Json;
+
+public class ChatClient
 {
-	public class ChatClient
+	private readonly string _username;
+	private readonly IConnection _connection;
+	private readonly IModel _channel;
+	private readonly string _exchange = "chat.direct";
+
+	public readonly IChatLogic _chatLogic;
+	public readonly IMessageLogic _messageLogic;
+	public readonly IUserLogic _userLogic;
+
+	private CancellationTokenSource _cts = new CancellationTokenSource();
+	private string _currentInterlocutor;
+
+	public ChatClient(string username, string host = "localhost")
 	{
-		private readonly string _username;
-		private readonly IConnection _connection;
-		private readonly IModel _channel;
-		private readonly string _exchange = "chat.direct";
-		public readonly IChatLogic _chatLogic;
-		public readonly IMessageLogic _messageLogic;
-		public readonly IUserLogic _userLogic;
-		private string _currentInterlocutor;
+		_username = username;
 
-		public ChatClient(string userName, string host = "localhost")
+		_chatLogic = new ChatLogic(username);
+		_messageLogic = new MessageLogic(username);
+		_userLogic = new UserLogic(username);
+
+		var factory = new ConnectionFactory()
 		{
-			_username = userName;
+			HostName = host,
+			DispatchConsumersAsync = true
+		};
 
-			_chatLogic = new ChatLogic(userName);
-			_messageLogic = new MessageLogic(userName);
-			_userLogic = new UserLogic(userName);
+		_connection = factory.CreateConnection();
+		_channel = _connection.CreateModel();
 
-			var factory = new ConnectionFactory() { HostName = host };
-			_connection = factory.CreateConnection();
-			_channel = _connection.CreateModel();
+		// Объявляем обменник (если уже есть - не создаст заново)
+		_channel.ExchangeDeclare(_exchange, ExchangeType.Direct, durable: true);
 
-			// создаём свою очередь и биндим к exchange
-			var queueName = $"queue.user.{_username}";
+		// Очередь для пользователя
+		var queue = $"queue.user.{_username}";
+		_channel.QueueDeclare(queue, durable: true, exclusive: false, autoDelete: false);
 
-			// задаем аргументы для очереди с временем жизни
-			var queueArgs = new Dictionary<string, object>
+		// Привязка к exchange
+		_channel.QueueBind(queue, _exchange, $"user.{_username}");
+	}
+
+	public void StartReceiving()
+	{
+		var queue = $"queue.user.{_username}";
+
+		_ = Task.Run(async () =>
+		{
+			Console.WriteLine($"📥 Consumer loop started for {_username}");
+
+			while (!_cts.Token.IsCancellationRequested)
 			{
-				{ "x-message-ttl", 2592000000 },    // TTL сообщений: 30 дней (в миллисекундах)
-				{ "x-expires", 2592000000 }         // TTL очереди: 30 дней без активности
-			};
+				try
+				{
+					var result = _channel.BasicGet(queue, autoAck: false);
 
-			// объявляем очередь внутри брокера
-			_channel.QueueDeclare(
-				queueName,                  // имя очереди
-				durable: true,              // устойчивость к падению durability
-				false,                      // exclusive
-				false,                      // autoDelete
-				arguments: queueArgs        // arguments дополнительно. они null по умолчанию
-				);
+					if (result == null)
+					{
+						await Task.Delay(200, _cts.Token);
+						continue;
+					}
 
-			// привязываем очередь к exchange по routingKey
-			// (то есть говорим, все элементы с таким ключом сюда переправляй епта)
-			_channel.QueueBind(
-				queueName, // привязываем 
-				_exchange,
-				routingKey: $"user.{_username}"
-				);
+					var json = Encoding.UTF8.GetString(result.Body.ToArray());
+					var msg = JsonSerializer.Deserialize<MessageDto>(json);
 
-			Console.WriteLine($"[{_username}] подключен к серверу, очередь: '{queueName}'");
-		}
+					if (msg == null)
+					{
+						_channel.BasicAck(result.DeliveryTag, false);
+						continue;
+					}
 
-		public async Task SetCurrentInterlocutorAsync(string interlocutor)
+					await HandleIncomingMessage(msg);
+
+					_channel.BasicAck(result.DeliveryTag, false);
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine("❌ Consumer error: " + ex.Message);
+					await Task.Delay(500);
+				}
+			}
+
+			Console.WriteLine("❗ Consumer loop stopped.");
+		});
+	}
+
+	private async Task HandleIncomingMessage(MessageDto msg)
+	{
+		var sender = msg.Sender;
+
+		var chat = await _chatLogic.ReadElementAsync(new ChatSearchModel
 		{
-			_currentInterlocutor = interlocutor;
+			CurrentUser = _username,
+			Interlocutor = sender
+		});
 
-			var chat = await _chatLogic.ReadElementAsync(new ChatSearchModel
+		if (chat == null)
+		{
+			await _chatLogic.CreateAsync(new ChatBindingModel
 			{
 				CurrentUser = _username,
-				Interlocutor = interlocutor
+				Interlocutor = sender
 			});
 
-			if (chat == null)
+			chat = await _chatLogic.ReadElementAsync(new ChatSearchModel
 			{
-				await _chatLogic.CreateAsync(new ChatBindingModel
-				{
-					CurrentUser = _username,
-					Interlocutor = interlocutor
-				});
-			}
+				CurrentUser = _username,
+				Interlocutor = sender
+			});
 		}
 
-		public void StartReceiving()
+		await _messageLogic.CreateAsync(new MessageBindingModel
 		{
-			var consumer = new EventingBasicConsumer(_channel);
-			consumer.Received += async (ch, ea) =>
-			{
-				var messageBody = Encoding.UTF8.GetString(ea.Body.ToArray());
-				var parts = messageBody.Split(new[] { ": " }, 2, StringSplitOptions.None);
-				if (parts.Length == 2)
-				{
-					var sender = parts[0];
-					var content = parts[1];
+			Sender = sender,
+			Recipient = _username,
+			Content = msg.Content,
+			Timestamp = msg.Timestamp,
+			ChatId = chat.Id,
+			IsSent = false
+		});
 
-					try
-					{
-						// 1. СНАЧАЛА СОЗДАЕМ/ПОЛУЧАЕМ ЧАТ ДЛЯ ПОЛУЧАТЕЛЯ
-						var chat = await _chatLogic.ReadElementAsync(new ChatSearchModel
-						{
-							CurrentUser = _username,  // текущий пользователь (получатель)
-							Interlocutor = sender     // отправитель становится собеседником
-						});
-
-						if (chat == null)
-						{
-							var createResult = await _chatLogic.CreateAsync(new ChatBindingModel
-							{
-								CurrentUser = _username,
-								Interlocutor = sender
-							});
-
-							if (createResult)
-							{
-								chat = await _chatLogic.ReadElementAsync(new ChatSearchModel
-								{
-									CurrentUser = _username,
-									Interlocutor = sender
-								});
-							}
-						}
-
-						// 2. СОХРАНЯЕМ СООБЩЕНИЕ С ПРАВИЛЬНЫМ ChatId
-						if (chat != null)
-						{
-							await _messageLogic.CreateAsync(new MessageBindingModel
-							{
-								Sender = sender,
-								Recipient = _username,
-								Content = content,
-								IsSent = false,
-								ChatId = chat.Id
-							});
-						}
-
-						Console.ForegroundColor = ConsoleColor.Green;
-						Console.WriteLine($"\n💬 [{DateTime.Now:HH:mm:ss}] Новое сообщение от {sender}: {content}");
-						Console.ResetColor();
-
-						if (sender == _currentInterlocutor)
-						{
-							await ShowCurrentChatAsync();
-						}
-
-						// Подтверждаем получение - сообщение УДАЛЯЕТСЯ из очереди
-						_channel.BasicAck(ea.DeliveryTag, multiple: false);
-					}
-					catch (Exception ex)
-					{
-						Console.WriteLine($"❌ Ошибка при сохранении полученного сообщения: {ex.Message}");
-					}
-
-					Console.Write("Выберите действие: ");
-				}
-			};
-			_channel.BasicConsume(
-				$"queue.user.{_username}",
-				false,   // ручное подтверждение
-				consumer
-				);
-		}
-
-		public async Task SendMessageAsync(string text)
-		{
-			if (string.IsNullOrEmpty(_currentInterlocutor))
-			{
-				Console.WriteLine("❌ Сначала выберите собеседника");
-				return;
-			}
-
-			try
-			{
-				// 1. СНАЧАЛА СОЗДАЕМ/ПОЛУЧАЕМ ЧАТ
-				var chat = await _chatLogic.ReadElementAsync(new ChatSearchModel
-				{
-					CurrentUser = _username,
-					Interlocutor = _currentInterlocutor
-				});
-
-				if (chat == null)
-				{
-					var createResult = await _chatLogic.CreateAsync(new ChatBindingModel
-					{
-						CurrentUser = _username,
-						Interlocutor = _currentInterlocutor
-					});
-
-					if (!createResult)
-					{
-						Console.WriteLine("❌ Не удалось создать чат");
-						return;
-					}
-
-					// Получаем созданный чат с ID
-					chat = await _chatLogic.ReadElementAsync(new ChatSearchModel
-					{
-						CurrentUser = _username,
-						Interlocutor = _currentInterlocutor
-					});
-				}
-
-				// 2. ТЕПЕРЬ СОХРАНЯЕМ СООБЩЕНИЕ С ПРАВИЛЬНЫМ ChatId
-				await _messageLogic.CreateAsync(new MessageBindingModel
-				{
-					Sender = _username,
-					Recipient = _currentInterlocutor,
-					Content = text,
-					IsSent = true,
-					ChatId = chat.Id  // ВАЖНО: передаем ID существующего чата
-				});
-
-				// 3. ОТПРАВЛЯЕМ ЧЕРЕЗ RabbitMQ
-				var body = Encoding.UTF8.GetBytes($"{_username}: {text}");
-				_channel.BasicPublish(_exchange, $"user.{_currentInterlocutor}", null, body);
-
-				Console.WriteLine($"✅ Сообщение отправлено {_currentInterlocutor}: {text}");
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine($"❌ Ошибка отправки: {ex.Message}");
-				if (ex.InnerException != null)
-				{
-					Console.WriteLine($"Внутренняя ошибка: {ex.InnerException.Message}");
-				}
-			}
-		}
-
-		public async Task ShowCurrentChatAsync()
-		{
-			if (string.IsNullOrEmpty(_currentInterlocutor))
-			{
-				Console.WriteLine("❌ Сначала выберите собеседника");
-				return;
-			}
-
-			try
-			{
-				var chat = await _chatLogic.ReadElementAsync(new ChatSearchModel
-				{
-					CurrentUser = _username,
-					Interlocutor = _currentInterlocutor
-				});
-
-				if (chat == null)
-				{
-					Console.WriteLine("❌ Чат не найден");
-					return;
-				}
-
-				// ИЩЕМ СООБЩЕНИЯ ПО ID ЧАТА (если ChatId правильно сохраняется)
-				var messages = await _messageLogic.ReadListAsync(new MessageSearchModel
-				{
-					ChatId = chat.Id
-				});
-
-				Console.WriteLine($"\n📱 Чат с {_currentInterlocutor} (ID: {chat.Id})");
-				Console.WriteLine("══════════════════════════════════");
-
-				if (messages == null || !messages.Any())
-				{
-					Console.WriteLine("   Пока нет сообщений...");
-					return;
-				}
-
-				foreach (var msg in messages.OrderBy(m => m.Timestamp))
-				{
-					string direction = msg.Sender == _username ? "➡️" : "⬅️";
-					Console.WriteLine($"   {direction} [{msg.Timestamp:HH:mm}] {msg.Sender}: {msg.Content}");
-				}
-
-				Console.WriteLine("══════════════════════════════════");
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine($"❌ Ошибка загрузки чата: {ex.Message}");
-			}
-		}
-
-		public async Task ShowAllChatsAsync()
-		{
-			var chats = await _chatLogic.ReadListAsync(null);
-
-			Console.WriteLine("\n💬 Ваши чаты:");
-			Console.WriteLine("══════════════════════════════════");
-
-			if (chats == null || !chats.Any())
-			{
-				Console.WriteLine("   Пока нет чатов...");
-				return;
-			}
-
-			foreach (var chat in chats)
-			{
-				// Получаем последнее сообщение в чате для превью
-				var lastMessage = await _messageLogic.ReadListAsync(new MessageSearchModel
-				{
-					Sender = _username,
-					Recipient = chat.Interlocutor
-				});
-
-				var lastMsgPreview = lastMessage?.OrderByDescending(m => m.Timestamp).FirstOrDefault();
-				var previewText = lastMsgPreview != null ?
-					$"{lastMsgPreview.Content.Substring(0, Math.Min(20, lastMsgPreview.Content.Length))}..." :
-					"Нет сообщений";
-
-				Console.WriteLine($"   👤 {chat.Interlocutor} | 📝 {previewText}");
-			}
-
-			Console.WriteLine("══════════════════════════════════");
-		}
-
-		public string GetUsername() => _username;
-		public string GetCurrentInterlocutor() => _currentInterlocutor;
+		Console.WriteLine($"💬 {sender}: {msg.Content}");
 	}
+
+	public async Task SendMessageAsync(string text)
+	{
+		if (_currentInterlocutor == null) return;
+
+		var chat = await _chatLogic.ReadElementAsync(new ChatSearchModel
+		{
+			CurrentUser = _username,
+			Interlocutor = _currentInterlocutor
+		});
+
+		if (chat == null)
+		{
+			await _chatLogic.CreateAsync(new ChatBindingModel
+			{
+				CurrentUser = _username,
+				Interlocutor = _currentInterlocutor
+			});
+
+			chat = await _chatLogic.ReadElementAsync(new ChatSearchModel
+			{
+				CurrentUser = _username,
+				Interlocutor = _currentInterlocutor
+			});
+		}
+
+		var dto = new MessageDto
+		{
+			Sender = _username,
+			Recipient = _currentInterlocutor,
+			Content = text,
+			Timestamp = DateTime.UtcNow
+		};
+
+		await _messageLogic.CreateAsync(new MessageBindingModel
+		{
+			Sender = dto.Sender,
+			Recipient = dto.Recipient,
+			Content = dto.Content,
+			Timestamp = dto.Timestamp,
+			ChatId = chat.Id,
+			IsSent = true
+		});
+
+		var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(dto));
+		_channel.BasicPublish(_exchange, $"user.{_currentInterlocutor}", null, body);
+	}
+
+	public async Task SetCurrentInterlocutorAsync(string user)
+	{
+		_currentInterlocutor = user;
+
+		var chat = await _chatLogic.ReadElementAsync(new ChatSearchModel
+		{
+			CurrentUser = _username,
+			Interlocutor = user
+		});
+
+		if (chat == null)
+		{
+			await _chatLogic.CreateAsync(new ChatBindingModel
+			{
+				CurrentUser = _username,
+				Interlocutor = user
+			});
+		}
+	}
+
+	public string GetUsername() => _username;
 }
+

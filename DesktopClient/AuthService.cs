@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Models.Binding;
+using Models.Pagination;
 using Requests.Requests;
 using Requests.Responses;
 
@@ -153,6 +155,59 @@ namespace DesktopClient
 			catch(Exception ex) 
 			{
 				return (false, string.Empty);
+			}
+		}
+
+		public async Task<(bool Success, PaginatedResult<UserBindingModel>? Result)> SearchUsersAsync(
+			string? username = null,
+			int page = 1,
+			int pageSize = 30)
+		{
+			try
+			{
+				// Собираем параметры запроса
+				var queryParams = new Dictionary<string, string>
+				{
+					["page"] = page.ToString(),
+					["pageSize"] = pageSize.ToString()
+				};
+
+				// Добавляем параметр поиска, если он указан
+				if (!string.IsNullOrWhiteSpace(username))
+				{
+					queryParams["query"] = username;
+				}
+
+				// Формируем URL с query параметрами
+				var queryString = string.Join("&", queryParams.Select(kvp =>
+					$"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value)}"));
+
+				var url = $"/api/auth/search?{queryString}";
+
+				var result = await _apiClient.GetAsync<PaginatedResult<UserBindingModel>>(url);
+				return (true, result);
+			}
+			catch (Exception ex)
+			{
+				// Логируем ошибку (по желанию)
+				//_logger.LogError(ex, "Error searching users");
+				return (false, null);
+			}
+		}
+
+		public async Task<(bool Success, UserBindingModel? User)> GetUserByIdAsync(string userId)
+		{
+			try
+			{
+				var url = $"/api/users/{Uri.EscapeDataString(userId)}";
+				var user = await _apiClient.GetAsync<UserBindingModel>(url);
+				return (true, user);
+			}
+			catch (Exception ex)
+			{
+				// Логируем ошибку
+				Console.WriteLine($"Error getting user by id: {ex.Message}");
+				return (false, null);
 			}
 		}
 	}

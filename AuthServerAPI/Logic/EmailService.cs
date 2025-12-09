@@ -64,7 +64,7 @@ namespace AuthServerAPI.Logic
 			}
 			catch (Exception ex)
 			{
-				_logger.LogError(ex, $"Failed to send email to {email}");
+				_logger.LogError("Ошибка отправки");
 				return false;
 			}
 		}

@@ -215,7 +215,7 @@ namespace AuthServerAPI.Controllers
 		{
 			if (string.IsNullOrWhiteSpace(query))
 			{
-				return BadRequest("Search query is required");
+				return BadRequest("Отсутствуют параметры запроса");
 			}
 
 			var result = await _userLogic.SearchUsersAsync(query, page, pageSize);
@@ -231,13 +231,13 @@ namespace AuthServerAPI.Controllers
 				var user = await _userLogic.ReadElementAsync(new UserSearchModel { Id = iid });
 				if (user == null)
 				{
-					return NotFound($"User with id {id} not found");
+					return NotFound($"Пользователь не найден");
 				}
 
 				return Ok(user);
 			}
 			catch (Exception ex) {
-				return BadRequest("Invalid id");
+				return BadRequest("Невалидный ID");
 			}		
 		}
 

@@ -121,7 +121,7 @@
 			// Общая ошибка
 			lblError = new Label();
 			lblError.Text = "";
-			lblError.Font = new Font("Segoe UI", 10, FontStyle.Regular);
+			lblError.Font = new Font("Segoe UI", 8, FontStyle.Regular);
 			lblError.ForeColor = Color.Red;
 			lblError.AutoSize = true;
 			lblError.Location = new Point(20, 190);

@@ -10,16 +10,16 @@ namespace Storage.Repositories
 {
 	public class ChatStorage : IChatStorage
 	{
-		private readonly ChatDatabase _context;
+		private readonly string _username;
 
 		public ChatStorage(string username)
 		{
-			_context = new ChatDatabase(username);
-			_context.Database.EnsureCreated();
+			_username = username;
 		}
 
 		public async Task<ChatViewModel?> DeleteAsync(ChatBindingModel model)
 		{
+			using var _context = new ChatDatabase(_username);
 			var element = await _context.Chats.FirstOrDefaultAsync(rec => rec.Id == model.Id);
 			if (element != null)
 			{
@@ -32,6 +32,7 @@ namespace Storage.Repositories
 
 		public async Task<ChatViewModel?> GetElementAsync(ChatSearchModel model)
 		{
+			using var _context = new ChatDatabase(_username);
 			if ((string.IsNullOrEmpty(model.CurrentUser) || string.IsNullOrEmpty(model.Interlocutor)) && !model.Id.HasValue)
 			{
 				return null;
@@ -51,6 +52,7 @@ namespace Storage.Repositories
 
 		public async Task<List<ChatViewModel>> GetFilteredListAsync(ChatSearchModel model)
 		{
+			using var _context = new ChatDatabase(_username);
 			var query = _context.Chats.AsQueryable();
 
 			if (!string.IsNullOrEmpty(model.CurrentUser))
@@ -70,6 +72,7 @@ namespace Storage.Repositories
 
 		public async Task<List<ChatViewModel>> GetFullListAsync()
 		{
+			using var _context = new ChatDatabase(_username);
 			return await _context.Chats
 				.Select(x => x.GetViewModel)
 				.ToListAsync();
@@ -77,6 +80,7 @@ namespace Storage.Repositories
 
 		public async Task<ChatViewModel?> InsertAsync(ChatBindingModel model)
 		{
+			using var _context = new ChatDatabase(_username);
 			var newChat = Chat.Create(model);
 			if (newChat == null)
 			{
@@ -89,6 +93,7 @@ namespace Storage.Repositories
 
 		public async Task<ChatViewModel?> UpdateAsync(ChatBindingModel model)
 		{
+			using var _context = new ChatDatabase(_username);
 			var chat = await _context.Chats.FirstOrDefaultAsync(x => x.Id == model.Id);
 			if (chat == null)
 			{
@@ -101,6 +106,7 @@ namespace Storage.Repositories
 
 		public async Task<PaginatedResult<ChatViewModel>> GetRecentChatsAsync(int page, int pageSize)
 		{
+			using var _context = new ChatDatabase(_username);
 			var baseQuery = _context.Chats
 				.AsQueryable();
 			// Базовый запрос для чатов с сообщениями
@@ -152,6 +158,7 @@ namespace Storage.Repositories
 			int page = 1,
 			int pageSize = 30)
 		{
+			using var _context = new ChatDatabase(_username);
 			// Базовый запрос
 			var baseQuery = _context.Chats
 				.Where(c => c.Messages.Any()) // Только чаты с сообщениями

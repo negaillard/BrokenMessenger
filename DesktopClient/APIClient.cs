@@ -107,7 +107,7 @@ namespace DesktopClient
 			var content = await response.Content.ReadAsStringAsync();
 			if (!response.IsSuccessStatusCode)
 			{
-				throw new Exception($"HTTP Error: {response.StatusCode}\n{content}");
+				throw new Exception($"{response.StatusCode}\n{content}");
 			}
 
 			if (string.IsNullOrEmpty(content))
@@ -121,6 +121,7 @@ namespace DesktopClient
 			});
 		}
 
+		public string GetSessionToken() => _sessionToken;
 		public void Dispose()
 		{
 			_httpClient.Dispose();

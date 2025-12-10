@@ -10,15 +10,15 @@ namespace Storage.Repositories
 {
 	public class MessageStorage : IMessageStorage
 	{
-		private readonly ChatDatabase _context;
+		private readonly string _username;
 
 		public MessageStorage(string username)
 		{
-			_context = new ChatDatabase(username);
-			_context.Database.EnsureCreated();
+			_username = username;
 		}
 		public async Task<MessageViewModel?> DeleteAsync(MessageBindingModel model)
 		{
+			using var _context = new ChatDatabase(_username);
 			var element = await _context.Messages.FirstOrDefaultAsync(rec => rec.Id == model.Id);
 			if (element != null)
 			{
@@ -31,6 +31,7 @@ namespace Storage.Repositories
 
 		public async Task<MessageViewModel?> GetElementAsync(MessageSearchModel model)
 		{
+			using var _context = new ChatDatabase(_username);
 			if (string.IsNullOrEmpty(model.Content) && !model.Id.HasValue && !model.ChatId.HasValue)
 			{
 				return null;
@@ -51,6 +52,7 @@ namespace Storage.Repositories
 
 		public async Task<List<MessageViewModel>> GetFilteredListAsync(MessageSearchModel model)
 		{
+			using var _context = new ChatDatabase(_username);
 			var query = _context.Messages.AsQueryable();
 
 			// Добавляем условия фильтрации, если параметры указаны
@@ -86,6 +88,7 @@ namespace Storage.Repositories
 
 		public async Task<List<MessageViewModel>> GetFullListAsync()
 		{
+			using var _context = new ChatDatabase(_username);
 			return await _context.Messages
 				.Select(x => x.GetViewModel)
 				.ToListAsync();
@@ -93,6 +96,7 @@ namespace Storage.Repositories
 
 		public async Task<MessageViewModel?> InsertAsync(MessageBindingModel model)
 		{
+			using var _context = new ChatDatabase(_username);
 			var newMessage = Message.Create(model);
 			if (newMessage == null)
 			{
@@ -105,6 +109,7 @@ namespace Storage.Repositories
 
 		public async Task<MessageViewModel?> UpdateAsync(MessageBindingModel model)
 		{
+			using var _context = new ChatDatabase(_username);
 			var message = await _context.Messages.FirstOrDefaultAsync(x => x.Id == model.Id);
 			if (message == null)
 			{
@@ -120,6 +125,7 @@ namespace Storage.Repositories
 		int page = 1,
 		int pageSize = 50)
 		{
+			using var _context = new ChatDatabase(_username);
 			if (page < 1) page = 1;
 			if (pageSize < 1) pageSize = 50;
 
@@ -164,6 +170,7 @@ namespace Storage.Repositories
 			int page = 1,
 			int pageSize = 50)
 		{
+			using var _context = new ChatDatabase(_username);
 			if (page < 1) page = 1;
 			if (pageSize < 1) pageSize = 50;
 

@@ -1,7 +1,9 @@
-﻿using Models.Binding;
+﻿using Microsoft.IdentityModel.Tokens;
+using Models.Binding;
 using Models.Pagination;
 using Models.Search;
 using Models.View;
+using Storage;
 using System.Data;
 
 namespace DesktopClient
@@ -15,7 +17,7 @@ namespace DesktopClient
 		private bool _isLoading = false;
 		private bool _hasMore = true;
 		private string _searchQuery = null;
-		private string _me = "";
+		private string _me;
 		private readonly AuthService _authService;
 
 		private int _currentChatId = 0;
@@ -25,6 +27,8 @@ namespace DesktopClient
 		private bool _hasMoreMessages = true;
 		private bool _isAtTop = false;
 		private bool _isChatLoaded = false; // Добавляем это поле
+
+
 		private List<MessageViewModel> _loadedMessages = new();
 
 		public MainChatForm(string username)
@@ -34,6 +38,8 @@ namespace DesktopClient
 			_authService = new AuthService(apiClient);
 			InitializeComponent();
 
+			InitializeDatabase(username);
+
 			_chatClient = new ChatClient(username);
 			_chatClient.StartReceiving();
 
@@ -41,7 +47,72 @@ namespace DesktopClient
 			this.SizeChanged += MainChatForm_SizeChanged;
 		}
 
+		public void InitializeDatabase(string username)
+		{
+			using var db = new ChatDatabase(username);
+			db.Database.EnsureCreated();
+		}
+
 		#region События
+		private async void ChatsListPanel_MouseWheel(object sender, MouseEventArgs e)
+		{
+			if (_isLoading || !_hasMore)
+				return;
+
+			// Прокрутка вниз e.Delta < 0
+			if (e.Delta < 0)
+			{
+				var panel = chatsListPanel;
+
+				// Почти у нижней границы?
+				if (panel.VerticalScroll.Value + panel.Height >= panel.VerticalScroll.Maximum - 100)
+				{
+					await LoadChatsFromDatabase();
+				}
+			}
+		}
+		private async void MessagesPanel_MouseWheel(object sender, MouseEventArgs e)
+		{
+			if (_currentInterlocutor.IsNullOrEmpty())
+			{
+				return;
+			}
+			// Если пользователь прокручивает вверх
+			if (e.Delta > 0)
+			{
+				// и почти у верхней границы
+				if (messagesPanel.VerticalScroll.Value <= messagesPanel.VerticalScroll.Minimum + 5)
+				{
+					if (!_isLoadingMessages && _hasMoreMessages)
+					{
+						await LoadMoreMessagesAsync(); // или LoadMoreMessagesPreserveScrollAsync()
+					}
+				}
+			}
+		}
+		private async void MessagesPanel_Scroll(object sender, ScrollEventArgs e)
+		{
+			// Если нет собеседника — выходим
+			if (string.IsNullOrEmpty(_currentInterlocutor))
+				return;
+
+			// Если уже идёт загрузка — выходим
+			if (_isLoadingMessages || !_hasMoreMessages)
+				return;
+
+			// Проверяем, долистал ли пользователь до самого верха
+			if (messagesPanel.VerticalScroll.Value == 0)
+			{
+				int oldScrollHeight = messagesPanel.DisplayRectangle.Height;
+
+				await LoadMoreMessagesAsync();
+
+				// После подгрузки восстановим положение скролла,
+				// чтобы чат не "прыгал" вниз
+				int newScrollHeight = messagesPanel.DisplayRectangle.Height;
+				messagesPanel.VerticalScroll.Value = newScrollHeight - oldScrollHeight;
+			}
+		}
 
 		private void MainChatForm_Load(object sender, EventArgs e)
 		{
@@ -95,6 +166,160 @@ namespace DesktopClient
 		#endregion
 
 		#region Отрисовка
+
+		private void PrependMessages(List<MessageViewModel> newMessages)
+		{
+			if (newMessages == null || newMessages.Count == 0) return;
+
+			// Гарантируем, что работаем на UI-потоке (если вызывается из async методов - уже так обычно)
+			if (InvokeRequired)
+			{
+				Invoke(new Action(() => PrependMessages(newMessages)));
+				return;
+			}
+
+			messagesPanel.SuspendLayout();
+
+			try
+			{
+				// --- 1) Найдём «первый видимый контрол» до вставки, чтобы потом восстановить скролл ---
+				Control firstVisible = messagesPanel.Controls
+					.Cast<Control>()
+					.OrderBy(c => c.Top)
+					.FirstOrDefault(c => c.Bottom > messagesPanel.VerticalScroll.Value);
+
+				object firstVisibleTag = firstVisible?.Tag;
+				int offsetFromTop = firstVisible != null ? firstVisible.Top - messagesPanel.VerticalScroll.Value : 0;
+
+				// --- 2) Создаём контролы для новых сообщений в правильном хронологическом порядке ---
+				// Предполагаем, что newMessages приходят от старых к новым; если нет — сортируем
+				var sorted = newMessages.OrderBy(m => m.Timestamp).ToList();
+
+				var newControls = new List<Control>();
+				int totalOffset = 0;
+				foreach (var msg in sorted)
+				{
+					var ctrl = CreateMessageControl(
+						msg.Content,
+						msg.Sender == _chatClient.GetUsername(),
+						ConvertToLocalTime(msg.Timestamp).ToString("HH:mm"),
+						0 // y — мы установим потом
+					);
+
+					// Присваиваем уникальный тег, чтобы потом можно было найти контрол (важно для сохранения позиции)
+					// Используем id если есть, иначе комбинируем sender+timestamp
+					ctrl.Tag = msg.Id != 0 ? (object)msg.Id : $"{msg.Sender}_{msg.Timestamp.Ticks}";
+
+					// Возможно CreateMessageControl установил неправильную Top (0) — запомним размеры
+					newControls.Add(ctrl);
+					totalOffset += ctrl.Height + 5;
+				}
+
+				// --- 3) Сдвигаем вниз все существующие контролы на полученный offset ---
+				// (это освободит место сверху для новых контролов)
+				foreach (Control exist in messagesPanel.Controls)
+				{
+					exist.Top += totalOffset;
+				}
+
+				// --- 4) Вставляем новые контролы сверху (в том же порядке: от старых к новым) ---
+				// Определяем стартовую позицию для первой новой панели:
+				int startTop;
+				if (messagesPanel.Controls.Count > 0)
+				{
+					// найдем минимальный Top после сдвига — это будет место для вставки
+					startTop = messagesPanel.Controls.Cast<Control>().Min(c => c.Top) - totalOffset;
+				}
+				else
+				{
+					// пустая панель — используем небольшой отступ сверху
+					startTop = 10;
+				}
+
+				// Однако более корректный startTop — если первый существующий контрол до сдвига имел TopFirst,
+				// то новое место = TopFirst - totalOffset. Мы уже сдвинули, поэтому:
+				if (firstVisible != null)
+				{
+					// firstVisible.Top уже увеличен на totalOffset, поэтому старт = firstVisible.Top - totalOffset - (смещение от начала панели)
+					// но проще — найдем минимальный Top сейчас и используем его для стартовой позиции
+					startTop = messagesPanel.Controls.Cast<Control>().Min(c => c.Top) - totalOffset;
+					// если получилось очень маленькое значение — ограничим
+					if (startTop < 5) startTop = 5;
+				}
+
+				// Но чтобы не полагаться на хитрые кейсы, мы просто ставим первую новую панель на
+				// previousMinTop (до сдвига) или на 10, если не было элементов.
+				int previousMinTop = messagesPanel.Controls.Count > 0
+					? messagesPanel.Controls.Cast<Control>().Min(c => c.Top)
+					: 10;
+				// корректируем предыдущий min по смыслу: до сдвига он был previousMinTop - totalOffset
+				int insertTop = previousMinTop - totalOffset;
+				if (messagesPanel.Controls.Count == 0) insertTop = 10;
+
+				// Теперь добавляем
+				int currentTop = insertTop;
+				foreach (var ctrl in newControls)
+				{
+					// Сохраняем X — CreateMessageControl уже выставил X (лево/право), поэтому оставляем его
+					int x = ctrl.Location.X;
+
+					ctrl.Location = new Point(x, currentTop);
+					messagesPanel.Controls.Add(ctrl);
+					ctrl.BringToFront();
+
+					currentTop += ctrl.Height + 5;
+				}
+
+				// --- 5) Восстановим видимую позицию: найдём тот же firstVisible контрол (по Tag) и проскроллим к нему ---
+				if (firstVisibleTag != null)
+				{
+					var sameControl = messagesPanel.Controls
+						.Cast<Control>()
+						.FirstOrDefault(c => c.Tag != null && c.Tag.Equals(firstVisibleTag));
+
+					if (sameControl != null)
+					{
+						int newScroll = Math.Max(0, sameControl.Top - offsetFromTop);
+						// В WinForms AutoScrollPosition ведёт себя странно: установка в (0, y) требует отрицательных координат.
+						// Удобнее - установить Value напрямую, но Value может быть вне допустимого диапазона, поэтому защищаемся:
+						var v = messagesPanel.VerticalScroll;
+						int clamped = Math.Min(Math.Max(newScroll, v.Minimum), v.Maximum);
+						try
+						{
+							messagesPanel.AutoScrollPosition = new Point(0, clamped);
+						}
+						catch
+						{
+							// fallback
+							messagesPanel.VerticalScroll.Value = clamped;
+						}
+					}
+					else
+					{
+						// fallback: если контрол не найден — ставим скролл на значение, увеличенное на totalOffset
+						var v = messagesPanel.VerticalScroll;
+						int clamped = Math.Min(Math.Max(messagesPanel.VerticalScroll.Value + totalOffset, v.Minimum), v.Maximum);
+						try
+						{
+							messagesPanel.AutoScrollPosition = new Point(0, clamped);
+						}
+						catch
+						{
+							messagesPanel.VerticalScroll.Value = clamped;
+						}
+					}
+				}
+				else
+				{
+					// Если before не существовал — ничего не делаем (панель пустая ранее)
+				}
+			}
+			finally
+			{
+				messagesPanel.ResumeLayout();
+				messagesPanel.Invalidate();
+			}
+		}
 		private void RenderAllMessages()
 		{
 			messagesPanel.Controls.Clear();
@@ -159,6 +384,14 @@ namespace DesktopClient
 
 			panel.Click += async (s, e) =>
 			{
+				if (_chatClient._chatLogic.ReadElementAsync(new ChatSearchModel
+				{
+					Interlocutor = user.Username
+				}) != null)
+				{
+					await SelectChatAsync(user.Username);
+					return;
+				}
 				// создаём новый чат
 				await _chatClient._chatLogic.CreateAsync(new ChatBindingModel
 				{
@@ -331,19 +564,11 @@ namespace DesktopClient
 					return;
 				}
 
-				// Берём список имён существующих чатов
-				var existingChatNames = chatsListPanel.Controls
-					.OfType<Panel>()
-					.Select(p => p.Controls.OfType<Label>().First().Text)
-					.ToHashSet();
 
 				int y = 10;
 
 				foreach (var user in result.Items)
 				{
-					if (existingChatNames.Contains(user.Username) || user.Username == _me)
-						continue; // Пропускаем если чат уже существует
-
 					var panel = CreateUserSearchItem(user, y);
 					usersSearchPanel.Controls.Add(panel);
 					y += 50;
@@ -383,9 +608,9 @@ namespace DesktopClient
 				PaginatedResult<ChatViewModel> result;
 
 				if (string.IsNullOrWhiteSpace(_searchQuery))
-					result = await _chatClient._chatLogic.GetRecentChatsAsync(_currentPage, 30);
+					result = await _chatClient._chatLogic.GetRecentChatsAsync(_currentPage, 5);
 				else
-					result = await _chatClient._chatLogic.SearchChatsAsync(_searchQuery, _currentPage, 30);
+					result = await _chatClient._chatLogic.SearchChatsAsync(_searchQuery, _currentPage, 5);
 
 				if (result == null || result.Items.Count == 0)
 				{
@@ -416,7 +641,7 @@ namespace DesktopClient
 					yPos += 80;
 				}
 
-				if (result.Items.Count < 30)
+				if (result.Items.Count < 5)
 					_hasMore = false;
 				else
 					_currentPage++;
@@ -433,15 +658,15 @@ namespace DesktopClient
 
 			try
 			{
-				// Если новый чат - сбрасываем всё
-				if (interlocutor != _currentInterlocutor && !loadMore)
+				// новый чат — сбрасываем состояние
+				if (!loadMore)
 				{
 					_currentInterlocutor = interlocutor;
 					_currentMessagePage = 1;
 					_hasMoreMessages = true;
-					_loadedMessages.Clear(); // Очищаем старые сообщения
+					_loadedMessages.Clear();
 					messagesPanel.Controls.Clear();
-					_isChatLoaded = false; // Сбрасываем флаг
+					_isChatLoaded = false;
 				}
 
 				var chat = await _chatClient._chatLogic.ReadElementAsync(new ChatSearchModel
@@ -462,7 +687,7 @@ namespace DesktopClient
 
 				_currentChatId = chat.Id;
 
-				// Загружаем страницу сообщений
+				// загружаем страницу
 				var pageResult = await _chatClient._messageLogic.GetMessagesByChatIdAsync(
 					chatId: chat.Id,
 					page: _currentMessagePage,
@@ -471,33 +696,24 @@ namespace DesktopClient
 
 				if (pageResult?.Items != null && pageResult.Items.Any())
 				{
-					// Добавляем в общий список
 					if (loadMore)
 					{
-						// При подгрузке вверх - добавляем в начало списка
-						_loadedMessages.InsertRange(0, pageResult.Items);
+						PrependMessages(pageResult.Items);
+
+						_currentMessagePage++;
 					}
 					else
 					{
-						// Первая загрузка - заменяем список
 						_loadedMessages = pageResult.Items.ToList();
+						RenderAllMessages();
 					}
 
-					// Отрисовываем ВСЕ сообщения
-					RenderAllMessages();
-
-					// Обновляем состояние
 					_hasMoreMessages = pageResult.HasNextPage;
-					if (loadMore)
-					{
-						_currentMessagePage++;
-					}
 					_isChatLoaded = true;
 				}
 				else if (!loadMore)
 				{
 					_isChatLoaded = false;
-					// Нет сообщений
 					messagesPanel.Controls.Clear();
 					_loadedMessages.Clear();
 				}
@@ -512,6 +728,7 @@ namespace DesktopClient
 				_isLoadingMessages = false;
 			}
 		}
+
 		private async Task SelectChatAsync(string interlocutor)
 		{
 			_currentInterlocutor = interlocutor;
@@ -541,12 +758,14 @@ namespace DesktopClient
 
 					AddMessageToChat(message, true);
 					txtMessage.Clear();
+					LoadChatsFromDatabase(reset: true);
 				}
 				catch (Exception ex)
 				{
 					MessageBox.Show($"Ошибка отправки сообщения: {ex.Message}", "Ошибка",
 				MessageBoxButtons.OK, MessageBoxIcon.Error);
 				}
+
 			}
 			else if (string.IsNullOrEmpty(_currentInterlocutor))
 			{
@@ -606,5 +825,11 @@ namespace DesktopClient
 		}
 
 		#endregion
+
+		private void btnLogout_Click(object sender, EventArgs e)
+		{
+			_authService.LogoutAsync();
+			this.Close();
+		}
 	}
 }

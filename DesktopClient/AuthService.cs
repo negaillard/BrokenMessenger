@@ -124,8 +124,9 @@ namespace DesktopClient
 			}
 		}
 
-		public async Task LogoutAsync(string token)
+		public async Task LogoutAsync()
 		{
+			string token = _apiClient.GetSessionToken();
 			try
 			{
 				await _apiClient.PostAsync<LogoutResponse>("/api/auth/logout", new LogoutRequest { SessionToken = token});

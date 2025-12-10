@@ -9,15 +9,15 @@ namespace Storage.Repositories
 {
 	public class UserStorage : IUserStorage
 	{
-		private readonly ChatDatabase _context;
-
+		private readonly string _username;
 		public UserStorage(string username)
 		{
-			_context = new ChatDatabase(username);
-			_context.Database.EnsureCreated();
+			_username = username;
 		}
 		public async Task<UserViewModel?> DeleteAsync(UserBindingModel model)
 		{
+			using var _context = new ChatDatabase(_username);
+
 			var element = await _context.Users.FirstOrDefaultAsync(rec => rec.Id == model.Id);
 			if (element != null)
 			{
@@ -30,6 +30,7 @@ namespace Storage.Repositories
 
 		public async Task<UserViewModel?> GetElementAsync(UserSearchModel model)
 		{
+			using var _context = new ChatDatabase(_username);
 			var query = _context.Users.AsQueryable();
 
 
@@ -60,6 +61,7 @@ namespace Storage.Repositories
 
 		public async Task<List<UserViewModel>> GetFilteredListAsync(UserSearchModel model)
 		{
+			using var _context = new ChatDatabase(_username);
 			var query = _context.Users.AsQueryable();
 
 			if (!string.IsNullOrEmpty(model.Username))
@@ -79,6 +81,7 @@ namespace Storage.Repositories
 
 		public async Task<List<UserViewModel>> GetFullListAsync()
 		{
+			using var _context = new ChatDatabase(_username);
 			return await _context.Users
 				.Select(x => x.GetViewModel)
 				.ToListAsync();
@@ -86,6 +89,7 @@ namespace Storage.Repositories
 
 		public async Task<UserViewModel?> InsertAsync(UserBindingModel model)
 		{
+			using var _context = new ChatDatabase(_username);
 			var newUser = User.Create(model);
 			if (newUser == null)
 			{
@@ -98,6 +102,7 @@ namespace Storage.Repositories
 
 		public async Task<UserViewModel?> UpdateAsync(UserBindingModel model)
 		{
+			using var _context = new ChatDatabase(_username);
 			var chat = await _context.Users.FirstOrDefaultAsync(x => x.Id == model.Id);
 			if (chat == null)
 			{

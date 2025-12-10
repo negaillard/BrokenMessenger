@@ -19,7 +19,7 @@
 			private Button btnUserMenu;
 			private Panel dropdownMenu;
 			private Button btnProfile;
-			private Button btnLogout;
+			
 			private Label lblUserInfo;
 			private Panel usersSearchPanel;
 			private Button btnSearch;
@@ -43,6 +43,7 @@
 			usersSearchPanel = new Panel();
 			btnSearch = new Button();
 			chatsHeader = new Panel();
+			btnLogout = new Button();
 			messagesPanel = new Panel();
 			chatHeaderPanel = new Panel();
 			lblChatsTitle = new Label();
@@ -55,6 +56,7 @@
 			splitContainer.Panel2.SuspendLayout();
 			splitContainer.SuspendLayout();
 			searchPanel.SuspendLayout();
+			chatsHeader.SuspendLayout();
 			chatHeaderPanel.SuspendLayout();
 			inputPanel.SuspendLayout();
 			SuspendLayout();
@@ -93,7 +95,7 @@
 			splitContainer.Panel2.Controls.Add(chatHeaderPanel);
 			splitContainer.Panel2.Controls.Add(inputPanel);
 			splitContainer.Size = new Size(1200, 800);
-			splitContainer.SplitterDistance = 350;
+			splitContainer.SplitterDistance = 355;
 			splitContainer.TabIndex = 0;
 			// 
 			// chatsListPanel
@@ -103,9 +105,11 @@
 			chatsListPanel.Dock = DockStyle.Fill;
 			chatsListPanel.Location = new Point(0, 310);
 			chatsListPanel.Name = "chatsListPanel";
-			chatsListPanel.Size = new Size(350, 490);
+			chatsListPanel.Size = new Size(355, 490);
 			chatsListPanel.TabIndex = 0;
 			chatsListPanel.Scroll += ChatsListPanel_Scroll;
+			chatsListPanel.MouseEnter += (s, e) => chatsListPanel.Focus();
+			chatsListPanel.MouseWheel += ChatsListPanel_MouseWheel;
 			// 
 			// searchPanel
 			// 
@@ -116,7 +120,7 @@
 			searchPanel.Dock = DockStyle.Top;
 			searchPanel.Location = new Point(0, 60);
 			searchPanel.Name = "searchPanel";
-			searchPanel.Size = new Size(350, 250);
+			searchPanel.Size = new Size(355, 250);
 			searchPanel.TabIndex = 1;
 			// 
 			// txtSearch
@@ -139,7 +143,6 @@
 			usersSearchPanel.Size = new Size(400, 200);
 			usersSearchPanel.TabIndex = 1;
 			usersSearchPanel.Visible = false;
-			usersSearchPanel.Visible = false;
 			// 
 			// btnSearch
 			// 
@@ -160,11 +163,26 @@
 			// chatsHeader
 			// 
 			chatsHeader.BackColor = Color.FromArgb(86, 130, 163);
+			chatsHeader.Controls.Add(btnLogout);
 			chatsHeader.Dock = DockStyle.Top;
 			chatsHeader.Location = new Point(0, 0);
 			chatsHeader.Name = "chatsHeader";
-			chatsHeader.Size = new Size(350, 60);
+			chatsHeader.Size = new Size(355, 60);
 			chatsHeader.TabIndex = 2;
+			// 
+			// btnLogout
+			// 
+			btnLogout.FlatAppearance.BorderSize = 0;
+			btnLogout.FlatStyle = FlatStyle.Flat;
+			btnLogout.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+			btnLogout.ForeColor = Color.White;
+			btnLogout.Location = new Point(3, 4);
+			btnLogout.Name = "btnLogout";
+			btnLogout.Size = new Size(94, 50);
+			btnLogout.TabIndex = 0;
+			btnLogout.Text = "Выход";
+			btnLogout.UseVisualStyleBackColor = false;
+			btnLogout.Click += btnLogout_Click;
 			// 
 			// messagesPanel
 			// 
@@ -173,9 +191,10 @@
 			messagesPanel.Dock = DockStyle.Fill;
 			messagesPanel.Location = new Point(0, 60);
 			messagesPanel.Name = "messagesPanel";
-			messagesPanel.Size = new Size(846, 640);
+			messagesPanel.Size = new Size(841, 640);
 			messagesPanel.TabIndex = 0;
-			
+			messagesPanel.Scroll += MessagesPanel_Scroll;
+			messagesPanel.MouseWheel += MessagesPanel_MouseWheel;
 			// 
 			// chatHeaderPanel
 			// 
@@ -185,7 +204,7 @@
 			chatHeaderPanel.Dock = DockStyle.Top;
 			chatHeaderPanel.Location = new Point(0, 0);
 			chatHeaderPanel.Name = "chatHeaderPanel";
-			chatHeaderPanel.Size = new Size(846, 60);
+			chatHeaderPanel.Size = new Size(841, 60);
 			chatHeaderPanel.TabIndex = 1;
 			// 
 			// lblChatsTitle
@@ -213,7 +232,7 @@
 			inputPanel.Name = "inputPanel";
 			inputPanel.RowCount = 1;
 			inputPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-			inputPanel.Size = new Size(846, 100);
+			inputPanel.Size = new Size(841, 100);
 			inputPanel.TabIndex = 2;
 			// 
 			// txtMessage
@@ -226,7 +245,7 @@
 			txtMessage.Multiline = true;
 			txtMessage.Name = "txtMessage";
 			txtMessage.ScrollBars = ScrollBars.Vertical;
-			txtMessage.Size = new Size(702, 68);
+			txtMessage.Size = new Size(698, 68);
 			txtMessage.TabIndex = 0;
 			txtMessage.KeyDown += TxtMessage_KeyDown;
 			// 
@@ -239,10 +258,10 @@
 			btnSend.FlatStyle = FlatStyle.Flat;
 			btnSend.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
 			btnSend.ForeColor = Color.White;
-			btnSend.Location = new Point(722, 15);
+			btnSend.Location = new Point(718, 15);
 			btnSend.Margin = new Padding(5, 15, 10, 15);
 			btnSend.Name = "btnSend";
-			btnSend.Size = new Size(112, 68);
+			btnSend.Size = new Size(111, 68);
 			btnSend.TabIndex = 1;
 			btnSend.Text = "➤";
 			btnSend.UseVisualStyleBackColor = false;
@@ -264,11 +283,13 @@
 			splitContainer.ResumeLayout(false);
 			searchPanel.ResumeLayout(false);
 			searchPanel.PerformLayout();
+			chatsHeader.ResumeLayout(false);
 			chatHeaderPanel.ResumeLayout(false);
 			chatHeaderPanel.PerformLayout();
 			inputPanel.ResumeLayout(false);
 			inputPanel.PerformLayout();
 			ResumeLayout(false);
 		}
+		private Button btnLogout;
 	}
 }

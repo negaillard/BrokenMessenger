@@ -14,6 +14,7 @@ public class ChatClient
 	private readonly IModel _channel;
 	private readonly string _exchange = "chat.direct";
 	private readonly string _queueName;
+	public event Action<MessageDto>? OnMessageReceived;
 
 	private readonly Dictionary<string, object> _queueArgs =
 		new Dictionary<string, object>
@@ -136,6 +137,8 @@ public class ChatClient
 		});
 
 		Console.WriteLine($"💬 {sender}: {msg.Content}");
+
+		OnMessageReceived?.Invoke(msg);
 	}
 
 	public async Task SendMessageAsync(string text)

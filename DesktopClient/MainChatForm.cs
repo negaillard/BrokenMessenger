@@ -42,10 +42,13 @@ namespace DesktopClient
 
 			_chatClient = new ChatClient(username);
 			_chatClient.StartReceiving();
+			_chatClient.OnMessageReceived += ChatClient_OnMessageReceived;
 
 			this.Load += MainChatForm_Load;
 			this.SizeChanged += MainChatForm_SizeChanged;
 		}
+
+
 
 		public void InitializeDatabase(string username)
 		{
@@ -54,6 +57,24 @@ namespace DesktopClient
 		}
 
 		#region События
+		private void ChatClient_OnMessageReceived(MessageDto msg)
+		{
+			// UI поток нужен!
+			if (InvokeRequired)
+			{
+				Invoke(new Action(() => ChatClient_OnMessageReceived(msg)));
+				return;
+			}
+
+			// Если сообщение относится к открытому чату → показываем
+			if (msg.Sender == _currentInterlocutor)
+			{
+				AddIncomingMessageToUI(msg);
+			}
+
+			// Обновляем список чатов
+			_ = LoadChatsFromDatabase(reset: true);
+		}
 		private async void ChatsListPanel_MouseWheel(object sender, MouseEventArgs e)
 		{
 			if (_isLoading || !_hasMore)
@@ -537,6 +558,24 @@ namespace DesktopClient
 		#endregion
 
 		#region Функциональность чата
+		private void AddIncomingMessageToUI(MessageDto msg)
+		{
+			var yPos = messagesPanel.Controls.Count > 0
+				? messagesPanel.Controls[messagesPanel.Controls.Count - 1].Bottom + 5
+				: 10;
+
+			var panel = CreateMessageControl(
+				msg.Content,
+				isMyMessage: false,
+				ConvertToLocalTime(msg.Timestamp).ToString("HH:mm"),
+				yPos
+			);
+
+			messagesPanel.Controls.Add(panel);
+
+			// скроллим вниз
+			messagesPanel.ScrollControlIntoView(panel);
+		}
 		private async Task LoadMoreMessagesAsync()
 		{
 			if (!_hasMoreMessages || _isLoadingMessages) return;

@@ -136,7 +136,6 @@
 			MaximizeBox = false;
 			MinimizeBox = true; // Оставляем возможность сворачивания
 			ControlBox = true;
-
 		}
 	}
 }

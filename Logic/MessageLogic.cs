@@ -13,12 +13,19 @@ namespace Logic
 	{
 		//private readonly ILogger _logger;
 		private readonly IMessageStorage _messageStorage;
+		
 		public MessageLogic(
 			//ILogger<MessageLogic> logger, 
 			string username)
 		{
 			//_logger = logger;
 			_messageStorage = new MessageStorage(username);
+		}
+
+		// Constructor for dependency injection (for testing)
+		public MessageLogic(IMessageStorage messageStorage)
+		{
+			_messageStorage = messageStorage;
 		}
 
 		public async Task<List<MessageViewModel>?> ReadListAsync(MessageSearchModel? model)

@@ -14,12 +14,19 @@ namespace Logic
 	{
 		//private readonly ILogger _logger;
 		private readonly IChatStorage _chatStorage;
+		
 		public ChatLogic(
 			//ILogger<ChatLogic> logger, 
 			string username)
 		{
 			//_logger = logger;
 			_chatStorage = new ChatStorage(username);
+		}
+
+		// Constructor for dependency injection (for testing)
+		public ChatLogic(IChatStorage chatStorage)
+		{
+			_chatStorage = chatStorage;
 		}
 
 		public async Task<List<ChatViewModel>?> ReadListAsync(ChatSearchModel? model)

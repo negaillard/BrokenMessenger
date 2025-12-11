@@ -12,12 +12,19 @@ namespace Logic
 	{
 		//private readonly ILogger _logger;
 		private readonly IUserStorage _userStorage;
+		
 		public UserLogic(
 			//ILogger<UserLogic> logger,
 			string username)
 		{
 			//_logger = logger;
 			_userStorage = new UserStorage(username);
+		}
+
+		// Constructor for dependency injection (for testing)
+		public UserLogic(IUserStorage userStorage)
+		{
+			_userStorage = userStorage;
 		}
 
 		public async Task<List<UserViewModel>?> ReadListAsync(UserSearchModel? model)

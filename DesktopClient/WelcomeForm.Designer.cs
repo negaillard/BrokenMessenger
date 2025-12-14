@@ -54,7 +54,7 @@
 			lblTitle.Name = "lblTitle";
 			lblTitle.Size = new Size(375, 54);
 			lblTitle.TabIndex = 0;
-			lblTitle.Text = "Мессенджер Олег";
+			lblTitle.Text = "Мессенджер";
 			lblTitle.TextAlign = ContentAlignment.MiddleCenter;
 			// 
 			// buttonPanel
@@ -114,7 +114,7 @@
 			ClientSize = new Size(623, 395);
 			Controls.Add(panelMain);
 			Name = "WelcomeForm";
-			Text = "Мессенджер Олег";
+			Text = "Мессенджер";
 			WindowState = FormWindowState.Maximized;
 			MaximizeBox = false;
 			MinimizeBox = true; // Оставляем возможность сворачивания

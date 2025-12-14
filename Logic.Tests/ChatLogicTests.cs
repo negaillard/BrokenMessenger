@@ -167,7 +167,7 @@ namespace Logic.Tests
 			// Arrange
 			var chatLogic = new ChatLogic(_mockChatStorage.Object);
 
-			// Act & Assert
+			// Act Assert
 			await Assert.ThrowsAsync<ArgumentNullException>(() => 
 				chatLogic.CreateAsync(null!));
 		}

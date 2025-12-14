@@ -11,10 +11,12 @@ namespace DesktopClient
 	{
 		private static readonly byte[] Entropy = Encoding.UTF8.GetBytes("Oleja123");
 		// path to the file with token
-		private static readonly string StoragePath = Path.Combine(
-			Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-			"SecureChat",
-			"session.dat");
+		////private static readonly string StoragePath = Path.Combine(
+		//	Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+		//	"SecureChat",
+		//	"session.dat");
+
+		private static string StoragePath;
 
 		public static void SaveSessionToken(string token)
 		{
@@ -89,6 +91,33 @@ namespace DesktopClient
 		public static bool HasSessionToken()
 		{
 			return File.Exists(StoragePath);
+		}
+
+		public static void InitInstance(string[] args)
+		{
+			// По умолчанию — instance 1
+			int instanceNumber = 1;
+
+			// Ищем аргумент --instance=2
+			foreach (var a in args)
+			{
+				if (a.StartsWith("--instance="))
+				{
+					if (int.TryParse(a.Substring("--instance=".Length), out int num))
+						instanceNumber = num;
+				}
+			}
+
+			StoragePath = Path.Combine(
+				Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+				"SecureChat",
+				$"session_{instanceNumber}.dat"
+			);
+
+			// Создаём каталог
+			Directory.CreateDirectory(
+				Path.GetDirectoryName(StoragePath)
+			);
 		}
 	}
 }

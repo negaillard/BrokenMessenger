@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using AuthServerAPI.Models;
-using Models;
 
 namespace AuthServerAPI.Storage
 {

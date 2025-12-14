@@ -170,7 +170,7 @@
 
 			AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			ClientSize = new System.Drawing.Size(1200, 800);
-			Text = "Мессенджер Олег - Регистрация";
+			Text = "Мессенджер - Регистрация";
 			WindowState = FormWindowState.Maximized;
 			MaximizeBox = false;
 			MinimizeBox = true; // Оставляем возможность сворачивания

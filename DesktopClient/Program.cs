@@ -11,8 +11,9 @@ namespace DesktopClient
 		public static AuthService AuthService { get; private set; }
 
 		[STAThread]
-		static async Task Main()
-		{	
+		static async Task Main(string[] args)
+		{
+			SecureStorage.InitInstance(args); // удалить
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
 

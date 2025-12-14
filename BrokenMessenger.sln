@@ -34,6 +34,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DesktopClient", "DesktopCli
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Requests", "Requests\Requests.csproj", "{9CB564FF-AAF4-4D19-82E3-723D8885E32B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthServerTests", "AuthServerTests\AuthServerTests.csproj", "{F476E29C-1229-4008-83F0-7999C5A0785D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8722C5DD-0B35-4ADC-93CB-46445F6E3120} = {8722C5DD-0B35-4ADC-93CB-46445F6E3120}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -80,6 +85,10 @@ Global
 		{9CB564FF-AAF4-4D19-82E3-723D8885E32B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9CB564FF-AAF4-4D19-82E3-723D8885E32B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9CB564FF-AAF4-4D19-82E3-723D8885E32B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F476E29C-1229-4008-83F0-7999C5A0785D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F476E29C-1229-4008-83F0-7999C5A0785D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F476E29C-1229-4008-83F0-7999C5A0785D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F476E29C-1229-4008-83F0-7999C5A0785D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

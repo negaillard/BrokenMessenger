@@ -1,7 +1,6 @@
 ﻿using AuthServerAPI.Logic.Interfaces;
 using AuthServerAPI.Models;
 using AuthServerAPI.Storage;
-using Models;
 
 namespace AuthServerAPI.Logic
 {
@@ -128,7 +127,5 @@ namespace AuthServerAPI.Logic
 
 			return await _userStorage.SearchUsersAsync(searchModel, page, pageSize);
 		}
-
-
 	}
 }

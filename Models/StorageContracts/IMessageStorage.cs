@@ -1,4 +1,5 @@
 ﻿using Models.Binding;
+using Models.Pagination;
 using Models.Search;
 using Models.View;
 
@@ -12,5 +13,13 @@ namespace Models.StorageContracts
 		Task<MessageViewModel?> InsertAsync(MessageBindingModel model);
 		Task<MessageViewModel?> UpdateAsync(MessageBindingModel model);
 		Task<MessageViewModel?> DeleteAsync(MessageBindingModel model);
+		Task<PaginatedResult<MessageViewModel>> SearchMessagesAsync(
+			MessageSearchModel searchModel,
+			int page,
+			int pageSize);
+		Task<PaginatedResult<MessageViewModel>> GetMessagesByChatIdAsync(
+		int chatId,
+		int page,
+		int pageSize);
 	}
 }

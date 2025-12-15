@@ -1,8 +1,11 @@
-﻿using Models.Binding;
+﻿using Microsoft.Extensions.Logging;
+using Models.Binding;
 using Models.LogicContracts;
+using Models.Pagination;
 using Models.Search;
 using Models.StorageContracts;
 using Models.View;
+using Storage.Models;
 using Storage.Repositories;
 
 namespace Logic
@@ -11,12 +14,19 @@ namespace Logic
 	{
 		//private readonly ILogger _logger;
 		private readonly IChatStorage _chatStorage;
+		
 		public ChatLogic(
 			//ILogger<ChatLogic> logger, 
 			string username)
 		{
 			//_logger = logger;
 			_chatStorage = new ChatStorage(username);
+		}
+
+		// Constructor for dependency injection (for testing)
+		public ChatLogic(IChatStorage chatStorage)
+		{
+			_chatStorage = chatStorage;
 		}
 
 		public async Task<List<ChatViewModel>?> ReadListAsync(ChatSearchModel? model)
@@ -115,6 +125,31 @@ namespace Logic
 			{
 				throw new InvalidOperationException("Такая чат уже есть");
 			}
+		}
+
+		public async Task<PaginatedResult<ChatViewModel>> GetRecentChatsAsync(int page = 1, int pageSize = 30)
+		{
+			if (page < 1) page = 1;
+			if (pageSize < 1) pageSize = 30;
+
+			return await _chatStorage.GetRecentChatsAsync(page, pageSize);
+		}
+
+		public async Task<PaginatedResult<ChatViewModel>> SearchChatsAsync(
+			string interlocutorName,
+			int page = 1,
+			int pageSize = 30)
+		{
+			if (page < 1) page = 1;
+			if (pageSize < 1) pageSize = 30;
+
+			var searchModel = new ChatSearchModel
+			{
+				Interlocutor = interlocutorName
+				// Можно добавить и другие фильтры при необходимости
+			};
+
+			return await _chatStorage.SearchChatsAsync(searchModel, page, pageSize);
 		}
 	}
 }

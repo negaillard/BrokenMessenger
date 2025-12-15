@@ -10,5 +10,11 @@ namespace Models.View
 		public string CurrentUser { get; set; } = string.Empty;
 		[DisplayName("собеседник")]
 		public string Interlocutor { get; set; } = string.Empty;
+
+		[DisplayName("Последнее сообщение")]
+		public string LastMessageText { get; set; } = string.Empty;
+
+		[DisplayName("Время")]
+		public DateTime? LastMessageTime { get; set; }
 	}
 }

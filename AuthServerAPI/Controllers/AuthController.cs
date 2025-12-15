@@ -1,9 +1,10 @@
 ﻿using AuthServerAPI.Logic;
 using AuthServerAPI.Logic.Interfaces;
 using AuthServerAPI.Models;
-using AuthServerAPI.Requests;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Requests.Requests;
+using Requests.Responses;
 
 namespace AuthServerAPI.Controllers
 {
@@ -12,20 +13,23 @@ namespace AuthServerAPI.Controllers
 	public class AuthController : ControllerBase
 	{
 		private readonly IUserLogic _userLogic;
-		private readonly CodeVerificationLogic _codeVerificationLogic;
+		private readonly ICodeVerificationLogic _codeVerificationLogic;
+		private readonly ISessionService _sessionService;
 		private readonly ILogger<AuthController> _logger;
 
 		public AuthController(
 		  IUserLogic userLogic,
-		  CodeVerificationLogic codeVerificationLogic,
+		  ICodeVerificationLogic codeVerificationLogic,
+		  ISessionService sessionService,
 		  ILogger<AuthController> logger)
 		{
 			_userLogic = userLogic;
 			_codeVerificationLogic = codeVerificationLogic;
+			_sessionService = sessionService;
 			_logger = logger;
 		}
 
-		[HttpPost]
+		[HttpPost("send-registration-code")]
 		public async Task<IActionResult> SendRegistrationCode([FromBody] RegistrationRequest request)
 		{
 			try
@@ -54,16 +58,16 @@ namespace AuthServerAPI.Controllers
 				}
 
 				_logger.LogInformation($"Код регистрации отправлен на: {request.Email}");
-				return Ok(new {message  = result.message});
+				return Ok(new RegistrationResponse{Message  = result.message});
 			}
 			catch (Exception ex)
 			{
 				_logger.LogError(ex, "Ошибка при отправке кода регистрации");
-				return BadRequest(new { error = "Ошибка сервера" });
+				return BadRequest(new { error = ex.Message });
 			}
 		}
 
-		[HttpPost]
+		[HttpPost("verify-registration")]
 		public async Task<IActionResult> VerifyRegistration([FromBody] VerifyRegistrationRequest request )
 		{
 			try
@@ -93,10 +97,10 @@ namespace AuthServerAPI.Controllers
 				}
 
 				_logger.LogInformation($"Пользователь создан: {request.Username}");
-				return Ok(new
+				return Ok(new VerifyRegistrationResponse
 				{
-					message = "Регистрация успешно завершена",
-					username = request.Username
+					Message = "Регистрация успешно завершена",
+					Username = request.Username
 				});
 			}
 			catch (Exception ex) 
@@ -106,7 +110,7 @@ namespace AuthServerAPI.Controllers
 			}
 		}
 
-		[HttpPost]
+		[HttpPost("send-login-code")]
 		public async Task<IActionResult> SendLoginCode([FromBody] LoginRequest request)
 		{
 			try
@@ -132,7 +136,7 @@ namespace AuthServerAPI.Controllers
 				}
 
 				_logger.LogInformation($"Код входа отправлен на: {usernameCheck.Email}");
-				return Ok(new { message = result.message });
+				return Ok(new LoginResponse{ Message = result.message });
 			}
 			catch (Exception ex)
 			{
@@ -141,7 +145,7 @@ namespace AuthServerAPI.Controllers
 			}
 		}
 
-		[HttpPost]
+		[HttpPost("verify-login")]
 		public async Task<IActionResult> VerifyLogin([FromBody] VerifyLoginRequest request)
 		{
 			try
@@ -163,12 +167,16 @@ namespace AuthServerAPI.Controllers
 					return BadRequest(new { error = codeResult.message });
 				}
 
-				_logger.LogInformation($"Успешный вход: {request.Username}");
-				return Ok(new
+				var sessionId = await _sessionService.CreateSessionAsync(user.Id, user.Username);
+
+				_logger.LogInformation($"Успешный вход: {request.Username}, session: {sessionId}");
+
+				return Ok(new VerifyLoginResponse
 				{
-					message = "Вход выполнен успешно",
-					username = user.Username,
-					userId = user.Id
+					Message = "Вход выполнен успешно",
+					Username = user.Username,
+					UserId = user.Id,
+					SessionToken = sessionId,
 				});
 			}
 			catch (Exception ex)
@@ -178,9 +186,64 @@ namespace AuthServerAPI.Controllers
 			}
 		}
 
+		[HttpPost("logout")]
+		public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+		{
+			await _sessionService.DeleteSessionAsync(request.SessionToken);
+			return Ok(new LogoutResponse{ Message = "Выход выполнен" });
+		}
+
+		[HttpGet("validate-session")]
+		public async Task<IActionResult> ValidateSession([FromHeader] string authorization)
+		{
+			var sessionId = authorization?.Replace("Bearer ", "");
+			if (string.IsNullOrEmpty(sessionId))
+				return Unauthorized();
+
+			var isValid = await _sessionService.ValidateSessionAsync(sessionId);
+			if (!isValid.Item1)
+				return Unauthorized();
+
+			return Ok(new ValidateSessionResponse{ IsValid = true, Username = isValid.Item2 });
+		}
+
+		[HttpGet("search")]
+		public async Task<IActionResult> SearchUsers(
+		   [FromQuery] string query,
+		   [FromQuery] int page = 1,
+		   [FromQuery] int pageSize = 30)
+		{
+			if (string.IsNullOrWhiteSpace(query))
+			{
+				return BadRequest("Отсутствуют параметры запроса");
+			}
+
+			var result = await _userLogic.SearchUsersAsync(query, page, pageSize);
+			return Ok(result);
+		}
+
+		[HttpGet("{id}")]
+		public async Task<IActionResult> GetUserById(string id)
+		{
+			try
+			{
+				int iid = Convert.ToInt32(id);
+				var user = await _userLogic.ReadElementAsync(new UserSearchModel { Id = iid });
+				if (user == null)
+				{
+					return NotFound($"Пользователь не найден");
+				}
+
+				return Ok(user);
+			}
+			catch (Exception ex) {
+				return BadRequest("Невалидный ID");
+			}		
+		}
+
 		#region Нахуй не нужны
 		// Проверка доступности username
-		[HttpPost]
+		[HttpPost("check-username")]
 		public async Task<IActionResult> CheckUsername([FromBody] UsernameCheckRequest request)
 		{
 			try
@@ -201,10 +264,10 @@ namespace AuthServerAPI.Controllers
 					});
 				}
 
-				return Ok(new
+				return Ok(new UsernameCheckResponse
 				{
-					available = true,
-					message = "Username доступен"
+					Available = true,
+					Message = "Username доступен"
 				});
 			}
 			catch (Exception ex)
@@ -215,7 +278,7 @@ namespace AuthServerAPI.Controllers
 		}
 
 		// Проверка доступности email
-		[HttpPost]
+		[HttpPost("check-email")]
 		public async Task<IActionResult> CheckEmail([FromBody] EmailCheckRequest request)
 		{
 			try
@@ -236,10 +299,10 @@ namespace AuthServerAPI.Controllers
 					});
 				}
 
-				return Ok(new
+				return Ok(new EmailCheckResponse
 				{
-					available = true,
-					message = "Email доступен"
+					Available = true,
+					Message = "Email доступен"
 				});
 			}
 			catch (Exception ex)

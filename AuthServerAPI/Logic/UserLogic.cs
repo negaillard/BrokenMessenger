@@ -9,11 +9,10 @@ namespace AuthServerAPI.Logic
 		private readonly ILogger _logger;
 		private readonly IUserStorage _userStorage;
 		public UserLogic(
-			ILogger<UserLogic> logger,
-			string username)
+			ILogger<UserLogic> logger, IUserStorage userStorage)
 		{
 			_logger = logger;
-			_userStorage = new UserStorage();
+			_userStorage = userStorage;
 		}
 
 		public async Task<List<UserBindingModel>?> ReadListAsync(UserSearchModel? model)
@@ -111,6 +110,22 @@ namespace AuthServerAPI.Logic
 			{
 				throw new InvalidOperationException("Такая пользователь уже есть");
 			}
+		}
+
+		public async Task<PaginatedResult<UserBindingModel>> SearchUsersAsync(
+		   string username,
+		   int page = 1,
+		   int pageSize = 30)
+		{
+			if (page < 1) page = 1;
+			if (pageSize < 1) pageSize = 30;
+
+			var searchModel = new UserSearchModel
+			{
+				Username = username
+			};
+
+			return await _userStorage.SearchUsersAsync(searchModel, page, pageSize);
 		}
 	}
 }

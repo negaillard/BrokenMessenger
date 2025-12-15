@@ -4,6 +4,8 @@ using Models.Search;
 using Models.StorageContracts;
 using Models.View;
 using Storage.Repositories;
+using Microsoft.Extensions.Logging;
+using Models.Pagination;
 
 namespace Logic
 {
@@ -11,12 +13,19 @@ namespace Logic
 	{
 		//private readonly ILogger _logger;
 		private readonly IMessageStorage _messageStorage;
+		
 		public MessageLogic(
 			//ILogger<MessageLogic> logger, 
 			string username)
 		{
 			//_logger = logger;
 			_messageStorage = new MessageStorage(username);
+		}
+
+		// Constructor for dependency injection (for testing)
+		public MessageLogic(IMessageStorage messageStorage)
+		{
+			_messageStorage = messageStorage;
 		}
 
 		public async Task<List<MessageViewModel>?> ReadListAsync(MessageSearchModel? model)
@@ -109,6 +118,28 @@ namespace Logic
 				throw new ArgumentNullException("Нет содержания", nameof(model.Content));
 			}
 			//_logger.LogInformation("Message. Name:{Name}. Id: {Id}", model.Sender, model.Id);
+		}
+
+		public async Task<PaginatedResult<MessageViewModel>> GetMessagesByChatIdAsync(
+	   int chatId,
+	   int page = 1,
+	   int pageSize = 50)
+		{
+			if (chatId <= 0)
+				throw new ArgumentException("Invalid chat ID");
+
+			return await _messageStorage.GetMessagesByChatIdAsync(chatId, page, pageSize);
+		}
+
+		public async Task<PaginatedResult<MessageViewModel>> SearchMessagesAsync(
+			MessageSearchModel searchModel,
+			int page = 1,
+			int pageSize = 50)
+		{
+			if (searchModel.ChatId.HasValue && searchModel.ChatId <= 0)
+				throw new ArgumentException("Invalid chat ID");
+
+			return await _messageStorage.SearchMessagesAsync(searchModel, page, pageSize);
 		}
 	}
 }

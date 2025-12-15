@@ -2,13 +2,17 @@ using AuthServerAPI.Logic;
 using AuthServerAPI.Logic.Interfaces;
 using AuthServerAPI.Models;
 using AuthServerAPI.Storage;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+
+// Entity Framework если используешь БД
+//builder.Services.AddDbContext<Context>(options =>
+//	options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Добавляем Redis
 // по сути мы здесь указываем, что Redis реализует IDistributedCache, хотя явно мы это не указали,
@@ -32,13 +36,17 @@ builder.Services.Configure<RedisSettings>(builder.Configuration.GetSection("Redi
 // это надо чтобы подставить значения из конфига(логин и пароль)
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
-
-builder.Services.AddScoped<IEmailService, EmailService>();
 // AddScoped - один экземпляр класса на один http запрос
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ICodeVerificationLogic, CodeVerificationLogic>();
 builder.Services.AddScoped<IUserLogic, UserLogic>();
+builder.Services.AddScoped<ISessionService, SessionService>();
 
 builder.Services.AddScoped<IUserStorage, UserStorage>();
+
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
@@ -51,6 +59,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.MapControllers();
 
 app.Run();
 
